@@ -1,0 +1,34 @@
+# Variables d'environnement locales et secrets
+.env
+.env.*
+
+# Exemple de configuration versionné
+!.env.example
+
+# Environnement virtuel Python
+.venv/
+venv/
+
+# Fichiers temporaires générés par Python
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Django
+db.sqlite3
+staticfiles/
+media/
+
+# Tests / coverage
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Fichiers personnels à ne jamais versionner
+no-commit/
