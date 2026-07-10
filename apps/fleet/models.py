@@ -4,6 +4,8 @@ from django.db import models
 import uuid
 from django.db import models
 
+from apps.fleet.upload_paths import vehicle_document_upload_path
+
 # -------------------------------------------------------------------
 # CarrierStatus
 # Statut du transporteur.
@@ -60,7 +62,7 @@ class VehicleScope(models.TextChoices):
 # Types de documents gérés pour le véhicule, le tracteur ou la citerne.
 # -------------------------------------------------------------------
 class VehicleDocumentType(models.TextChoices):
-    PRODUCT_INSURANCE = "PRODUCT_INSURANCE", "Product_Assurance"
+    PRODUCT_INSURANCE = "PRODUCT_INSURANCE", "Assurance produit"
     CIVIL_INSURANCE = "CIVIL_INSURANCE", "Assurance responsabilité civile"
     TECHNICAL_INSPECTION = "TECHNICAL_INSPECTION", "Visite technique"
     TANK_CERTIFICATE = "TANK_CERTIFICATE", "Certificat citerne"
@@ -303,7 +305,13 @@ class EvidenceType(models.TextChoices):
 # -------------------------------------------------------------------
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
+    created_by = models.CharField(max_length=255, blank=True, null=True)
+
     updated_at = models.DateTimeField(auto_now=True)
+    updated_by = models.CharField(max_length=255, blank=True, null=True)
+    
+    deleted_at = models.DateTimeField(blank=True, null=True)
+    deleted_by = models.CharField(max_length=255, blank=True, null=True)
 
     class Meta:
         abstract = True
@@ -347,8 +355,15 @@ class Vehicle(TimeStampedModel):
     # Immatriculation du tracteur.
     tractor_registration = models.CharField(max_length=50)
 
+    # Année de fabrication du tracteur.
+    tractor_manufacture_year = models.PositiveSmallIntegerField(blank=True, null=True)
+
     # Immatriculation de la citerne.
     tanker_registration = models.CharField(max_length=50)
+
+      # Année de fabrication de la citerne.
+    tanker_manufacture_year = models.PositiveSmallIntegerField(blank=True, null=True)
+
 
     # Immatriculation affichée : tracteur / citerne. Calculée dans save().
     display_registration = models.CharField(max_length=120, editable=False)
@@ -454,8 +469,13 @@ class VehicleDocument(TimeStampedModel):
     # Date d’expiration. Utilisée pour l’éligibilité et le Trip Readiness.
     expires_at = models.DateField(blank=True, null=True)
 
+    # Nom original du fichier uploadé par l’utilisateur.
+    # Stocké pour affichage, audit et traçabilité.
+    # Le vrai nom physique du fichier est géré par le champ file.
+    original_filename = models.CharField(max_length=255, blank=True, null=True)
+
     # Lien vers le fichier justificatif. Peut évoluer vers Evidence.
-    file_url = models.URLField(blank=True, null=True)
+    file = models.FileField(upload_to=vehicle_document_upload_path, max_length=500,blank=True,null=True)
 
     def __str__(self):
         return f"{self.vehicle} - {self.document_type}"
@@ -829,7 +849,7 @@ class ReturnToService(TimeStampedModel):
 # Évaluation de disponibilité.
 # Le système calcule, puis un inspecteur peut valider ou invalider.
 # -------------------------------------------------------------------
-class VehicleAvailabilityEvaluation(models.Model):
+class VehicleAvailabilityEvaluation(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="availability_evaluations")
@@ -855,7 +875,7 @@ class VehicleAvailabilityEvaluation(models.Model):
     # Justification si le résultat calculé est modifié.
     validation_comment = models.TextField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
+ 
 
     def __str__(self):
         return f"{self.vehicle} - {self.final_result}"
@@ -890,7 +910,7 @@ class VehicleAvailabilityEvaluationReason(models.Model):
 # Évaluation d’éligibilité pour le prochain voyage.
 # Toutes les évaluations sont conservées pour audit.
 # -------------------------------------------------------------------
-class NextTripEligibilityEvaluation(models.Model):
+class NextTripEligibilityEvaluation(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="eligibility_evaluations")
@@ -907,8 +927,6 @@ class NextTripEligibilityEvaluation(models.Model):
     # Snapshot des faits utilisés pour calculer le résultat.
     source_facts = models.JSONField(default=dict)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f"{self.vehicle} - {self.result}"
 
@@ -917,7 +935,7 @@ class NextTripEligibilityEvaluation(models.Model):
 # 22-NextTripEligibilityEvaluationReason
 # Raison détaillée d’une évaluation d’éligibilité.
 # -------------------------------------------------------------------
-class NextTripEligibilityEvaluationReason(models.Model):
+class NextTripEligibilityEvaluationReason(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     evaluation = models.ForeignKey(NextTripEligibilityEvaluation, on_delete=models.CASCADE, related_name="evaluation_reasons")
@@ -931,8 +949,6 @@ class NextTripEligibilityEvaluationReason(models.Model):
     # Identifiant optionnel de l’objet source.
     source_id = models.UUIDField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f"{self.evaluation} - {self.reason_type}"
 
@@ -943,7 +959,7 @@ class NextTripEligibilityEvaluationReason(models.Model):
 # Peut être liée à une inspection, un défaut, une correction,
 # une maintenance, une remise en service ou une évaluation.
 # -------------------------------------------------------------------
-class Evidence(models.Model):
+class Evidence(TimeStampedModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Type d’objet auquel la preuve est rattachée.
@@ -964,8 +980,6 @@ class Evidence(models.Model):
     # Utilisateur ayant ajouté la preuve.
     uploaded_by = models.CharField(max_length=255, blank=True, null=True)
 
-    uploaded_at = models.DateTimeField()
-    created_at = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return f"{self.owner_type} - {self.evidence_type}"
