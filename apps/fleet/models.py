@@ -309,7 +309,7 @@ class TimeStampedModel(models.Model):
 
     updated_at = models.DateTimeField(auto_now=True)
     updated_by = models.CharField(max_length=255, blank=True, null=True)
-    
+
     deleted_at = models.DateTimeField(blank=True, null=True)
     deleted_by = models.CharField(max_length=255, blank=True, null=True)
 
@@ -317,6 +317,17 @@ class TimeStampedModel(models.Model):
         abstract = True
 
 
+    #
+    # Modèle abstrait pour les objets horodatés qui peuvent être supprimés logiquement.
+    #
+class TimeStampedSoftDeletableModel(TimeStampedModel):
+
+    is_deleted = models.BooleanField(default=False)
+    deleted_at = models.DateTimeField(blank=True, null=True)
+    deleted_reason = models.TextField(blank=True, null=True)
+
+    class Meta:
+        abstract = True
 
 # -------------------------------------------------------------------
 # 2-Carrier
@@ -449,7 +460,7 @@ class FleetMembership(TimeStampedModel):
 # Document lié au Vehicle, au tracteur ou à la citerne.
 # La validité est calculée via expires_at.
 # -------------------------------------------------------------------
-class VehicleDocument(TimeStampedModel):
+class VehicleDocument(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="documents")
@@ -486,7 +497,7 @@ class VehicleDocument(TimeStampedModel):
 # Section réutilisable d’un questionnaire d’inspection.
 # Exemple : ÉTAT DU TRACTEUR, ÉTAT DE LA CITERNE.
 # -------------------------------------------------------------------
-class InspectionSection(TimeStampedModel):
+class InspectionSection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Code stable de la section.
@@ -507,7 +518,7 @@ class InspectionSection(TimeStampedModel):
 # Critère stable d’inspection.
 # Exemple : ceinture fonctionnelle, fuite citerne, klaxon fonctionnel.
 # -------------------------------------------------------------------
-class InspectionCriterion(TimeStampedModel):
+class InspectionCriterion(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Code stable du critère.
@@ -537,7 +548,7 @@ class InspectionCriterion(TimeStampedModel):
 # Place une section dans un contexte d’inspection.
 # Exemple : section ÉTAT DU TRACTEUR en position "1" dans BEFORE_TRIP.
 # -------------------------------------------------------------------
-class InspectionContextSection(TimeStampedModel):
+class InspectionContextSection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Contexte d’inspection : périodique, avant voyage, après incident, etc.
@@ -564,7 +575,7 @@ class InspectionContextSection(TimeStampedModel):
 # Place un critère dans une section utilisée par un contexte donné.
 # Exemple : 1.1 - Ceinture de sécurité.
 # -------------------------------------------------------------------
-class InspectionContextCriterion(TimeStampedModel):
+class InspectionContextCriterion(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Section de contexte dans laquelle le critère apparaît.
@@ -959,7 +970,7 @@ class NextTripEligibilityEvaluationReason(TimeStampedModel):
 # Peut être liée à une inspection, un défaut, une correction,
 # une maintenance, une remise en service ou une évaluation.
 # -------------------------------------------------------------------
-class Evidence(TimeStampedModel):
+class Evidence(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Type d’objet auquel la preuve est rattachée.
@@ -976,9 +987,6 @@ class Evidence(TimeStampedModel):
 
     # Description de la preuve.
     description = models.TextField(blank=True, null=True)
-
-    # Utilisateur ayant ajouté la preuve.
-    uploaded_by = models.CharField(max_length=255, blank=True, null=True)
 
 
     def __str__(self):
