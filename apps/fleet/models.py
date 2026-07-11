@@ -1,7 +1,6 @@
 import uuid
 from django.db import models
-
-import uuid
+from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
@@ -305,25 +304,48 @@ class EvidenceType(models.TextChoices):
 # -------------------------------------------------------------------
 class TimeStampedModel(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
-    created_by = models.CharField(max_length=255, blank=True, null=True)
+
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
 
     updated_at = models.DateTimeField(auto_now=True)
-    updated_by = models.CharField(max_length=255, blank=True, null=True)
 
-    deleted_at = models.DateTimeField(blank=True, null=True)
-    deleted_by = models.CharField(max_length=255, blank=True, null=True)
+    updated_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
+   
 
     class Meta:
         abstract = True
 
 
-    #
-    # Modèle abstrait pour les objets horodatés qui peuvent être supprimés logiquement.
-    #
+# -------------------------------------------------------------------
+# TimeStampedSoftDeletableModel
+# Modèle abstrait ajoutant la suppression logique et sa traçabilité.
+# -------------------------------------------------------------------
 class TimeStampedSoftDeletableModel(TimeStampedModel):
 
     is_deleted = models.BooleanField(default=False)
     deleted_at = models.DateTimeField(blank=True, null=True)
+
+    deleted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="+",
+    )
+
     deleted_reason = models.TextField(blank=True, null=True)
 
     class Meta:
@@ -334,7 +356,7 @@ class TimeStampedSoftDeletableModel(TimeStampedModel):
 # Représente le transporteur. Même s’il n’y en a qu’un seul en V1,
 # on le garde comme objet pour l’audit, les rapports et l’évolutivité.
 # -------------------------------------------------------------------
-class Carrier(TimeStampedModel):
+class Carrier(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Nom court ou nom commercial du transporteur.
@@ -357,7 +379,7 @@ class Carrier(TimeStampedModel):
 # couple tracteur + citerne. En V1, Tractor et Tanker ne sont pas
 # des objets autonomes.
 # -------------------------------------------------------------------
-class Vehicle(TimeStampedModel):
+class Vehicle(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Transporteur propriétaire/exploitant de la flotte.
@@ -405,7 +427,7 @@ class Vehicle(TimeStampedModel):
 # 4-TankerCompartment
 # Représente un compartiment de la citerne du Vehicle.
 # -------------------------------------------------------------------
-class TankerCompartment(TimeStampedModel):
+class TankerCompartment(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.CASCADE, related_name="tanker_compartments")
@@ -430,7 +452,7 @@ class TankerCompartment(TimeStampedModel):
 # Historique d’appartenance du Vehicle à la flotte.
 # Ne pas remplacer par un simple booléen is_in_fleet.
 # -------------------------------------------------------------------
-class FleetMembership(TimeStampedModel):
+class FleetMembership(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Vehicle concerné.
@@ -602,7 +624,7 @@ class InspectionContextCriterion(TimeStampedSoftDeletableModel):
 # Inspection réelle effectuée sur un Vehicle.
 # Les lignes de contrôle sont dans InspectionCriterionResult.
 # -------------------------------------------------------------------
-class Inspection(TimeStampedModel):
+class Inspection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="inspections")
@@ -631,7 +653,7 @@ class Inspection(TimeStampedModel):
 # Résultat d’un critère précis pendant une inspection réelle.
 # Peut générer automatiquement un Defect selon le critère.
 # -------------------------------------------------------------------
-class InspectionCriterionResult(TimeStampedModel):
+class InspectionCriterionResult(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     inspection = models.ForeignKey(Inspection, on_delete=models.CASCADE, related_name="criterion_results")
@@ -659,7 +681,7 @@ class InspectionCriterionResult(TimeStampedModel):
 # Défaut/anomalie nécessitant un suivi.
 # Peut être créé depuis une inspection, une observation, un incident ou une maintenance.
 # -------------------------------------------------------------------
-class Defect(TimeStampedModel):
+class Defect(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="defects")
@@ -700,7 +722,7 @@ class Defect(TimeStampedModel):
 # Action corrective associée à un Defect.
 # Une correction ne clôture pas automatiquement un défaut bloquant.
 # -------------------------------------------------------------------
-class CorrectiveAction(TimeStampedModel):
+class CorrectiveAction(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     defect = models.ForeignKey(Defect, on_delete=models.CASCADE, related_name="corrective_actions")
@@ -729,7 +751,7 @@ class CorrectiveAction(TimeStampedModel):
 # Validation de levée d’un défaut bloquant.
 # Distincte de la correction.
 # -------------------------------------------------------------------
-class DefectReleaseValidation(TimeStampedModel):
+class DefectReleaseValidation(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     defect = models.ForeignKey(Defect, on_delete=models.CASCADE, related_name="release_validations")
@@ -758,7 +780,7 @@ class DefectReleaseValidation(TimeStampedModel):
 # Maintenance préventive ou corrective.
 # Le blocage métier est porté par Defect, pas par Maintenance.
 # -------------------------------------------------------------------
-class Maintenance(TimeStampedModel):
+class Maintenance(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="maintenances")
@@ -790,7 +812,7 @@ class Maintenance(TimeStampedModel):
 # Distincte de Maintenance : toute maintenance peut immobiliser,
 # mais toute immobilisation n’est pas forcément une maintenance.
 # -------------------------------------------------------------------
-class Downtime(TimeStampedModel):
+class Downtime(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="downtimes")
@@ -822,7 +844,7 @@ class Downtime(TimeStampedModel):
 # Décision de remise en service.
 # Peut être proposée par le système ou décidée par l’inspecteur.
 # -------------------------------------------------------------------
-class ReturnToService(TimeStampedModel):
+class ReturnToService(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="return_to_services")
@@ -860,7 +882,7 @@ class ReturnToService(TimeStampedModel):
 # Évaluation de disponibilité.
 # Le système calcule, puis un inspecteur peut valider ou invalider.
 # -------------------------------------------------------------------
-class VehicleAvailabilityEvaluation(TimeStampedModel):
+class VehicleAvailabilityEvaluation(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="availability_evaluations")
@@ -896,7 +918,7 @@ class VehicleAvailabilityEvaluation(TimeStampedModel):
 # 20-VehicleAvailabilityEvaluationReason
 # Raison détaillée d’une évaluation de disponibilité.
 # -------------------------------------------------------------------
-class VehicleAvailabilityEvaluationReason(models.Model):
+class VehicleAvailabilityEvaluationReason(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     evaluation = models.ForeignKey(VehicleAvailabilityEvaluation, on_delete=models.CASCADE, related_name="evaluation_reasons")
@@ -910,8 +932,6 @@ class VehicleAvailabilityEvaluationReason(models.Model):
     # Identifiant optionnel de l’objet source.
     source_id = models.UUIDField(blank=True, null=True)
 
-    created_at = models.DateTimeField(auto_now_add=True)
-
     def __str__(self):
         return f"{self.evaluation} - {self.reason_type}"
 
@@ -921,7 +941,7 @@ class VehicleAvailabilityEvaluationReason(models.Model):
 # Évaluation d’éligibilité pour le prochain voyage.
 # Toutes les évaluations sont conservées pour audit.
 # -------------------------------------------------------------------
-class NextTripEligibilityEvaluation(TimeStampedModel):
+class NextTripEligibilityEvaluation(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="eligibility_evaluations")
@@ -946,7 +966,7 @@ class NextTripEligibilityEvaluation(TimeStampedModel):
 # 22-NextTripEligibilityEvaluationReason
 # Raison détaillée d’une évaluation d’éligibilité.
 # -------------------------------------------------------------------
-class NextTripEligibilityEvaluationReason(TimeStampedModel):
+class NextTripEligibilityEvaluationReason(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     evaluation = models.ForeignKey(NextTripEligibilityEvaluation, on_delete=models.CASCADE, related_name="evaluation_reasons")
