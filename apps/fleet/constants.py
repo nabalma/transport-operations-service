@@ -32,6 +32,7 @@ class VehicleStatus(models.TextChoices):
 # -------------------------------------------------------------------
 class FleetMembershipStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
+    PENDING ="PENDING","Pending"
     ENDED = "ENDED", "Ended"
 
 
@@ -310,3 +311,4 @@ class UserGroup:
     INSPECTOR = "Inspector"
     SUPERVISOR = "Supervisor"
     FLEET_MANAGER = "Fleet Manager"
+    MANAGER = "Manager"
