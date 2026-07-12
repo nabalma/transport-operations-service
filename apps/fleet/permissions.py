@@ -2,43 +2,59 @@ from rest_framework.permissions import BasePermission, SAFE_METHODS
 from apps.fleet.constants import UserGroup
 
 
+# -- BaseGroupPermission
+class BaseGroupPermission(BasePermission):
+
+    def _has_any_group(self, request, allowed_groups):
+        return request.user.groups.filter(name__in=allowed_groups).exists()
+
+
+#=======================================
+# PERMISSIONS
+#=======================================
 # -- InspectionPermission
-class InspectionPermission(BasePermission):
+class InspectionPermission(BaseGroupPermission):
 
-    def has_permission(self, request, view):
-        if not request.user.is_authenticated:
-            return False
-
+    def _get_allowed_groups(self, request):
         if request.method in SAFE_METHODS:
-            return request.user.groups.filter(
-                name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR, UserGroup.FLEET_MANAGER]
-            ).exists()
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,]
 
         if request.method == "POST":
-            return request.user.groups.filter(
-                name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR]
-            ).exists()
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,]
 
         if request.method in ["PUT", "PATCH", "DELETE"]:
-            return request.user.groups.filter(
-                name=UserGroup.INSPECTOR,
-            ).exists()
+            return [UserGroup.INSPECTOR,]
 
-        return False
-    
-
-# -- InspectionConfigurationPermission
-class InspectionConfigurationPermission(BasePermission):
+        return []
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
 
-        if request.method in SAFE_METHODS:
-            return request.user.groups.filter(
-                 name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR, UserGroup.FLEET_MANAGER]
-            ).exists()
+        allowed_groups = self._get_allowed_groups(request)
 
-        return request.user.groups.filter(
-            name=UserGroup.SUPERVISOR
-        ).exists()
+        return self._has_any_group(
+            request,
+            allowed_groups,
+        )
+
+
+# -- InspectionConfigurationPermission
+class InspectionConfigurationPermission(BaseGroupPermission):
+
+    def _get_allowed_groups(self, request):
+        if request.method in SAFE_METHODS:
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,]
+
+        return [UserGroup.SUPERVISOR,]
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        allowed_groups = self._get_allowed_groups(request)
+
+        return self._has_any_group(
+            request,
+            allowed_groups,
+                ).exists()

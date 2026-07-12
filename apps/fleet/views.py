@@ -10,41 +10,41 @@ from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
     queryset = Carrier.objects.prefetch_related("vehicles")
     serializer_class = CarrierSerializer
-    permission_classes = [IsAuthenticated]
+
 
    
 
 class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
    queryset = Vehicle.objects.select_related("carrier").prefetch_related( "tanker_compartments","fleet_memberships","documents").filter(is_deleted=False)
    serializer_class = VehicleSerializer
-   permission_classes = [IsAuthenticated]
+
 
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = TankerCompartment.objects.filter(is_deleted=False)
     serializer_class = TankerCompartmentSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 class FleetMembershipViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = FleetMembership.objects.filter(is_deleted=False)
     serializer_class = FleetMembershipSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = VehicleDocument.objects.filter(is_deleted=False)
     serializer_class = VehicleDocumentSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = InspectionSection.objects.filter(is_deleted=False)
     serializer_class = InspectionSectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionConfigurationPermission]
 
 class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = InspectionCriterion.objects.filter(is_deleted=False)
     serializer_class = InspectionCriterionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionConfigurationPermission]
 
 
 class InspectionContextSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -54,7 +54,7 @@ class InspectionContextSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
         .filter(is_deleted=False)
     )
     serializer_class = InspectionContextSectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionConfigurationPermission]
 
 
 class InspectionContextCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -77,7 +77,7 @@ class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewS
         InspectionCriterionResult.objects.select_related("inspection","context_criterion","context_criterion__criterion",).filter(is_deleted=False)
     )
     serializer_class = InspectionCriterionResultSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionPermission]
 
 
 class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -88,7 +88,7 @@ class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     .filter(is_deleted=False)
 )
     serializer_class = DefectSerializer
-    permission_classes = [IsAuthenticated]
+
 
 class CorrectiveActionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = (CorrectiveAction.objects
@@ -96,7 +96,7 @@ class CorrectiveActionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = CorrectiveActionSerializer
-    permission_classes = [IsAuthenticated]
+ 
 
 
 class DefectReleaseValidationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -104,7 +104,7 @@ class DefectReleaseValidationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet
         .select_related("defect")
         .filter(is_deleted=False))
     serializer_class = DefectReleaseValidationSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 class MaintenanceViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = ( Maintenance.objects
@@ -112,7 +112,7 @@ class MaintenanceViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = MaintenanceSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class DowntimeViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
@@ -121,7 +121,7 @@ class DowntimeViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = DowntimeSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
     queryset = (ReturnToService.objects
@@ -129,7 +129,7 @@ class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = ReturnToServiceSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class VehicleAvailabilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -138,7 +138,7 @@ class VehicleAvailabilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelV
         .filter(is_deleted=False)
     )
     serializer_class = VehicleAvailabilityEvaluationSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = (VehicleAvailabilityEvaluation.objects
@@ -147,7 +147,7 @@ class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
     .filter(is_deleted=False)
     )
     serializer_class = VehicleAvailabilityEvaluationReasonSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class NextTripEligibilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -157,7 +157,7 @@ class NextTripEligibilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelV
     .filter(is_deleted=False)
 )
     serializer_class = NextTripEligibilityEvaluationSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 
 class NextTripEligibilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -166,9 +166,8 @@ class NextTripEligibilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
         .filter(is_deleted=False)
     )
     serializer_class = NextTripEligibilityEvaluationReasonSerializer
-    permission_classes = [IsAuthenticated]
+  
 
 class EvidenceViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = Evidence.objects.filter(is_deleted=False)
     serializer_class = EvidenceSerializer
-    permission_classes = [IsAuthenticated]
