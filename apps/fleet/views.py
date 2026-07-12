@@ -1,4 +1,5 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
+from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
@@ -58,10 +59,9 @@ class InspectionContextSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
 
 class InspectionContextCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = (InspectionContextCriterion.objects
-        .select_related("context_section","criterion").filter(is_deleted=False)
-    )
+        .select_related("context_section","criterion").filter(is_deleted=False))
     serializer_class = InspectionContextCriterionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionConfigurationPermission]
 
 class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = (Inspection.objects
@@ -70,7 +70,7 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     .filter(is_deleted=False)
 )
     serializer_class = InspectionSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [InspectionPermission]
 
 class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = (
