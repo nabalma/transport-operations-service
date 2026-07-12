@@ -1,4 +1,5 @@
 from rest_framework.permissions import BasePermission, SAFE_METHODS
+from apps.fleet.constants import UserGroup
 
 
 # -- InspectionPermission
@@ -10,17 +11,17 @@ class InspectionPermission(BasePermission):
 
         if request.method in SAFE_METHODS:
             return request.user.groups.filter(
-                name__in=["Inspector", "Supervisor", "Fleet Manager"]
+                name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR, UserGroup.FLEET_MANAGER]
             ).exists()
 
         if request.method == "POST":
             return request.user.groups.filter(
-                name__in=["Inspector", "Supervisor"]
+                name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR]
             ).exists()
 
         if request.method in ["PUT", "PATCH", "DELETE"]:
             return request.user.groups.filter(
-                name="Inspector"
+                name=UserGroup.INSPECTOR,
             ).exists()
 
         return False
@@ -35,9 +36,9 @@ class InspectionConfigurationPermission(BasePermission):
 
         if request.method in SAFE_METHODS:
             return request.user.groups.filter(
-                name__in=["Supervisor", "Inspector", "Fleet Manager"]
+                 name__in=[UserGroup.INSPECTOR, UserGroup.SUPERVISOR, UserGroup.FLEET_MANAGER]
             ).exists()
 
         return request.user.groups.filter(
-            name="Supervisor"
+            name=UserGroup.SUPERVISOR
         ).exists()
