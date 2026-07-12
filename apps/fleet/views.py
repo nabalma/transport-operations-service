@@ -1,5 +1,5 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
-from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehiclePermission
+from apps.fleet.permissions import FleetMembershipPermission, InspectionConfigurationPermission, InspectionPermission, VehiclePermission
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 
@@ -23,18 +23,20 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = TankerCompartment.objects.filter(is_deleted=False)
     serializer_class = TankerCompartmentSerializer
+    permission_classes=[VehiclePermission]
   
 
 class FleetMembershipViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = FleetMembership.objects.filter(is_deleted=False)
     serializer_class = FleetMembershipSerializer
+    permission_classes =[FleetMembershipPermission]
   
 
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = VehicleDocument.objects.filter(is_deleted=False)
     serializer_class = VehicleDocumentSerializer
-  
+    permission_classes=[VehiclePermission]
 
 
 class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
