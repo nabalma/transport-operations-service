@@ -1,4 +1,4 @@
-from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet,InspectionContextCriterionViewSet, InspectionContextSectionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipViewSet, VehicleViewSet
+from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet,InspectionContextCriterionViewSet, InspectionContextSectionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -6,7 +6,7 @@ router.register("carriers", CarrierViewSet, basename="carrier")
 router.register("vehicles", VehicleViewSet, basename="vehicle")
 router.register("tanker-compartments",TankerCompartmentViewSet, basename = "tanker-compartment")
 router.register("vehicle-memberships",VehicleMembershipViewSet,basename="vehicle-membership",)
-router.register("vehicle-membership-requests",VehicleMembershipViewSet,basename="vehicle-membership-request",)
+router.register("vehicle-membership-requests",VehicleMembershipRequestViewSet,basename="vehicle-membership-request",)
 router.register("vehicle-documents",VehicleDocumentViewSet,basename="vehicle-document",)
 router.register("inspection-sections",InspectionSectionViewSet,basename="inspection-section",)
 router.register("inspection-criteria",InspectionCriterionViewSet,basename="inspection-criterion",)

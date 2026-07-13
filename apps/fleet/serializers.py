@@ -33,7 +33,7 @@ class TankerCompartmentSummarySerializer(serializers.ModelSerializer):
             "capacity_liters",
         ]
 
-# -- FleetMembershipSummary
+# -- VehicleMembershipSummary
 class VehicleMembershipSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = VehicleMembership
@@ -325,8 +325,6 @@ class VehicleMembershipRequestSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
-
-
 
 
 

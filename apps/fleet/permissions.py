@@ -122,6 +122,7 @@ class VehicleMembershipRequestPermission(BaseGroupPermission):
 
         return [
             UserGroup.MANAGER,
+            UserGroup.SUPERVISOR,
         ]
 
     def has_permission(self, request, view):
