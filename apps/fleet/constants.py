@@ -30,9 +30,8 @@ class VehicleStatus(models.TextChoices):
 # FleetMembershipStatus
 # Statut d’une période d’appartenance à la flotte.
 # -------------------------------------------------------------------
-class FleetMembershipStatus(models.TextChoices):
+class VehicleMembershipStatus(models.TextChoices):
     ACTIVE = "ACTIVE", "Active"
-    PENDING ="PENDING","Pending"
     ENDED = "ENDED", "Ended"
 
 
@@ -40,10 +39,22 @@ class FleetMembershipStatus(models.TextChoices):
 # FleetMembershipType
 # Type d’appartenance du véhicule à la flotte.
 # -------------------------------------------------------------------
-class FleetMembershipType(models.TextChoices):
+class VehicleMembershipType(models.TextChoices):
     SPOT = "SPOT", "Spot"
     CONTRACTUAL = "CONTRACTUAL", "Contractual"
 
+# -------------------------------------------------------------------
+# VehicleMembershipRequestStatus
+# Statut du workflow d’une demande d’appartenance à la flotte.
+# Permet de suivre la demande depuis sa préparation jusqu’à sa décision
+# finale ou son annulation.
+# -------------------------------------------------------------------
+class VehicleMembershipRequestStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Draft"
+    PENDING = "PENDING", "Pending"
+    APPROVED = "APPROVED", "Approved"
+    REJECTED = "REJECTED", "Rejected"
+    CANCELLED = "CANCELLED", "Cancelled"
 
 # -------------------------------------------------------------------
 # VehicleScope
@@ -312,3 +323,8 @@ class UserGroup:
     SUPERVISOR = "Supervisor"
     FLEET_MANAGER = "Fleet Manager"
     MANAGER = "Manager"
+
+
+# ---------------------------------------------
+# APPROBATION
+# ---------------------------------------------

@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
-from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType, FleetMembershipStatus, FleetMembershipType, InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleScope, VehicleStatus  
+from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
 # -------------------------------------------------------------------
 # 1-Base model
@@ -156,19 +156,21 @@ class TankerCompartment(TimeStampedSoftDeletableModel):
         return f"{self.vehicle} - Compartiment {self.compartment_number}"
 
 
+
+
 # -------------------------------------------------------------------
-# 5-FleetMembership
+# 5-vehicleMembership
 # Historique d’appartenance du Vehicle à la flotte.
 # Ne pas remplacer par un simple booléen is_in_fleet.
 # -------------------------------------------------------------------
-class FleetMembership(TimeStampedSoftDeletableModel):
+class VehicleMembership(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
 
     # Vehicle concerné.
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="fleet_memberships")
+    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="vehicle_memberships")
 
     # Transporteur concerné. Utile pour audit, même avec un seul transporteur.
-    carrier = models.ForeignKey(Carrier, on_delete=models.PROTECT, related_name="fleet_memberships")
+    carrier = models.ForeignKey(Carrier, on_delete=models.PROTECT, related_name="vehicle_memberships")
 
     # Date d’entrée dans la flotte.
     entry_date = models.DateField()
@@ -177,13 +179,56 @@ class FleetMembership(TimeStampedSoftDeletableModel):
     exit_date = models.DateField(blank=True, null=True)
 
     # Type d’appartenance : spot ou contractuelle.
-    membership_type = models.CharField(max_length=20, choices=FleetMembershipType.choices, default=FleetMembershipType.SPOT)
+    membership_type = models.CharField(max_length=20, choices=VehicleMembershipType.choices, default=VehicleMembershipType.SPOT)
 
     # Statut de la période d’appartenance.
-    status = models.CharField(max_length=20, choices=FleetMembershipStatus.choices, default=FleetMembershipStatus.ACTIVE)
+    status = models.CharField(max_length=20, choices=VehicleMembershipStatus.choices, default=VehicleMembershipStatus.ACTIVE)
 
     def __str__(self):
         return f"{self.vehicle} - {self.status}"
+
+
+
+# -------------------------------------------------------------------
+# 5-VehicleMembershipRequest
+# Demande d’ajout d’un véhicule à la flotte.
+# Le superviseur prépare et soumet la demande.
+# Le manager peut ensuite l’approuver ou la rejeter.
+# Une approbation entraîne la création d’un vehicleMembership.
+# -------------------------------------------------------------------
+class VehicleMembershipRequest(TimeStampedSoftDeletableModel):
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
+
+    # Véhicule concerné par la demande.
+    vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name="membership_requests",)
+
+    # Transporteur auquel le véhicule doit être rattaché.
+    carrier = models.ForeignKey(Carrier,on_delete=models.PROTECT,related_name="vehicle_membership_requests",)
+
+    # Date d’entrée souhaitée dans la flotte.
+    requested_entry_date = models.DateField()
+
+    # Type d’appartenance demandé : spot ou contractuelle.
+    membership_type = models.CharField(max_length=20,choices=VehicleMembershipType.choices,default=VehicleMembershipType.SPOT,)
+
+    # État courant du workflow d’approbation.
+    status = models.CharField(max_length=20,choices=VehicleMembershipRequestStatus.choices,default=VehicleMembershipRequestStatus.DRAFT,)
+
+    # Manager ayant approuvé ou rejeté la demande.
+    decided_by = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.SET_NULL,blank=True,null=True,related_name="decided_vehicle_membership_requests",)
+
+    # Date et heure de la décision du manager.
+    decided_at = models.DateTimeField(blank=True,null=True,)
+
+    # Commentaire fourni lors de l’approbation ou du rejet.
+    decision_comment = models.TextField(blank=True,null=True,)
+
+    def __str__(self):
+        return f"{self.vehicle} - {self.status}"
+
+
+
+
 
 
 # -------------------------------------------------------------------
@@ -720,3 +765,4 @@ class Evidence(TimeStampedSoftDeletableModel):
 
     def __str__(self):
         return f"{self.owner_type} - {self.evidence_type}"
+    

@@ -1,16 +1,15 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
-from apps.fleet.permissions import FleetMembershipPermission, InspectionConfigurationPermission, InspectionPermission, VehiclePermission
+from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
 from rest_framework.viewsets import ModelViewSet
-from rest_framework.permissions import IsAuthenticated
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, FleetMembership, Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, FleetMembershipSerializer, InspectionContextCriterionSerializer, InspectionContextSectionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleSerializer
+
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionContextCriterionSerializer, InspectionContextSectionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
     queryset = Carrier.objects.prefetch_related("vehicles")
     serializer_class = CarrierSerializer
-
 
    
 
@@ -26,12 +25,17 @@ class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     permission_classes=[VehiclePermission]
   
 
-class FleetMembershipViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = FleetMembership.objects.filter(is_deleted=False)
-    serializer_class = FleetMembershipSerializer
-    permission_classes =[FleetMembershipPermission]
+class VehicleMembershipViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = VehicleMembership.objects.filter(is_deleted=False)
+    serializer_class = VehicleMembershipSerializer
+    permission_classes =[VehicleMembershipPermission]
   
 
+class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = VehicleMembershipRequest.objects.filter(is_deleted=False)
+    serializer_class = VehicleMembershipRequestSerializer
+    permission_classes =[VehicleMembershipRequestPermission]
+ 
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = VehicleDocument.objects.filter(is_deleted=False)

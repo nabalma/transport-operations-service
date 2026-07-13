@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, FleetMembership, Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -34,9 +34,9 @@ class TankerCompartmentSummarySerializer(serializers.ModelSerializer):
         ]
 
 # -- FleetMembershipSummary
-class FleetMembershipSummarySerializer(serializers.ModelSerializer):
+class VehicleMembershipSummarySerializer(serializers.ModelSerializer):
     class Meta:
-        model = FleetMembership
+        model = VehicleMembership
         fields = [
             "membership_type",
             "status",
@@ -259,7 +259,7 @@ class CarrierSerializer(serializers.ModelSerializer):
 # -- Vehicle 
 class VehicleSerializer(serializers.ModelSerializer):
     tanker_compartments = TankerCompartmentSummarySerializer(many=True,read_only=True,)
-    fleet_memberships=FleetMembershipSummarySerializer(many=True,read_only=True,)
+    vehicle_memberships=VehicleMembershipSummarySerializer(many=True,read_only=True,)
     documents = VehicleDocumentSummarySerializer(many=True,read_only=True,)
     
     class Meta:
@@ -293,9 +293,9 @@ class TankerCompartmentSerializer(serializers.ModelSerializer):
 
 
 # -- FleetMembership
-class FleetMembershipSerializer(serializers.ModelSerializer):
+class VehicleMembershipSerializer(serializers.ModelSerializer):
     class Meta:
-        model = FleetMembership
+        model = VehicleMembership
         fields = "__all__"
 
         read_only_fields = [
@@ -308,6 +308,26 @@ class FleetMembershipSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
+
+# -- FleetMembership
+class VehicleMembershipRequestSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = VehicleMembershipRequest
+        fields = "__all__"
+
+        read_only_fields = [
+            "id",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+            "is_deleted",
+            "deleted_at",
+            "deleted_by",
+        ]
+
+
+
 
 
 # -- VehicleDocument
