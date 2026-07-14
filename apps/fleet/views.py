@@ -1,7 +1,10 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services import create_vehicle_membership_request
+from apps.fleet.services.membership_requests import create_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.decorators import action
+from rest_framework import status
+from rest_framework.response import Response
 
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
@@ -37,6 +40,8 @@ class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
     serializer_class = VehicleMembershipRequestSerializer
     permission_classes =[VehicleMembershipRequestPermission]
 
+
+    # action pour la creation de la request
     def perform_create(self, serializer):
         membership_request = create_vehicle_membership_request(
             vehicle_id=serializer.validated_data["vehicle"].id,
@@ -46,6 +51,19 @@ class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
         )
 
         serializer.instance = membership_request
+
+    # Pour la soumission de la requete. Lurl devra etre
+    # POST /api/fleet/vehicle-membership-requests/<id>/submit/
+    @action(detail=True, methods=["post"])
+    def submit(self, request, pk=None):
+        membership_request = self.get_object()
+
+        submitted_request = submit_vehicle_membership_request(
+        membership_request_id=membership_request.id,
+        submitted_by=request.user,
+        )
+        serializer = self.get_serializer(submitted_request)
+        return Response(serializer.data,status=status.HTTP_200_OK,)
  
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
