@@ -77,10 +77,7 @@ class VehiclePermission(BaseGroupPermission):
 
         allowed_groups = self._get_allowed_groups(request)
 
-        return self._has_any_group(
-            request,
-            allowed_groups,
-        )
+        return self._has_any_group(request,allowed_groups,)
     
 # -- FleetMembershipPermission
 class VehicleMembershipPermission(BaseGroupPermission):
@@ -104,35 +101,28 @@ class VehicleMembershipPermission(BaseGroupPermission):
 
         allowed_groups = self._get_allowed_groups(request)
 
-        return self._has_any_group(
-            request,
-            allowed_groups,
-        )
+        return self._has_any_group(request,allowed_groups,)
     
 
 # -- FleetMembershipPermission
 class VehicleMembershipRequestPermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request, view):
-            if (view.action =="create"):
-                return [UserGroup.SUPERVISOR]   
-            else:  
-                return [
-                UserGroup.MANAGER,
-                UserGroup.SUPERVISOR,
-            ]
+        if view.action == "create":
+            return [UserGroup.SUPERVISOR]
+
+        if view.action in ["approve", "reject"]:
+            return [UserGroup.MANAGER]
+
+        return [UserGroup.MANAGER,UserGroup.SUPERVISOR,]
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
 
-        allowed_groups = self._get_allowed_groups(request,view)
+        allowed_groups = self._get_allowed_groups(request, view)
 
-        return self._has_any_group(
-            request,
-            allowed_groups,
-        )
-    
+        return self._has_any_group(request,allowed_groups,)
 
     def has_object_permission(self, request, view, obj):
         if view.action == "cancel":

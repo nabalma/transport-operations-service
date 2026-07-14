@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.membership_requests import cancel_vehicle_membership_request, create_vehicle_membership_request, submit_vehicle_membership_request
+from apps.fleet.services.membership_requests import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
@@ -78,7 +78,35 @@ class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
 
         serializer = self.get_serializer(cancelled_request)
         return Response(serializer.data,status=status.HTTP_200_OK,)
+    
 
+    @action(detail=True, methods=["post"])
+    def approve(self, request, pk=None):
+        membership_request = self.get_object()
+
+        approved_request = approve_vehicle_membership_request(
+        membership_request_id=membership_request.id,
+        approved_by=request.user,
+        decision_comment=request.data.get("decision_comment"),
+        )
+
+        serializer = self.get_serializer(approved_request)
+
+        return Response(serializer.data,status=status.HTTP_200_OK,)
+
+
+    @action(detail=True, methods=["post"])
+    def reject(self, request, pk=None):
+        membership_request = self.get_object()
+
+        rejected_request = reject_vehicle_membership_request(
+        membership_request_id=membership_request.id,
+        rejected_by=request.user,
+        decision_comment=request.data.get("decision_comment"),
+        )
+
+        serializer = self.get_serializer(rejected_request)
+        return Response(serializer.data,status=status.HTTP_200_OK,)
  
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

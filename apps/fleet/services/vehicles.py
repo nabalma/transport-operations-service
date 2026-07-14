@@ -1,4 +1,4 @@
-from apps.fleet.constants import CarrierStatus
+from apps.fleet.constants import CarrierStatus, VehicleStatus
 from apps.fleet.models import Vehicle
 from rest_framework.exceptions import ValidationError
 
@@ -38,5 +38,21 @@ def _get_valid_carrier_or_error(*, vehicle):
         )
 
     return carrier
+
+
+# -------------------------------------------------------------------
+# Active un véhicule après son entrée officielle dans la flotte.
+# Enregistre également l'utilisateur ayant effectué la modification.
+# -------------------------------------------------------------------
+def activate_vehicle(*, vehicle, updated_by):
+    vehicle.status = VehicleStatus.ACTIVE
+    vehicle.updated_by = updated_by
+
+    vehicle.save(update_fields=[
+            "status",
+            "updated_by",
+            "updated_at",])
+
+    return vehicle
 
 

@@ -1,7 +1,9 @@
 from apps.fleet.constants import CarrierStatus, VehicleMembershipRequestStatus, VehicleMembershipStatus
 from apps.fleet.models import Vehicle, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.services.vehicles import _get_valid_carrier_or_error, _get_vehicle_or_error
+from apps.fleet.services.vehicles import _get_valid_carrier_or_error, _get_vehicle_or_error, activate_vehicle
 from rest_framework.exceptions import ValidationError
+from django.utils import timezone
+from django.db import transaction
 
 
 """
@@ -176,7 +178,7 @@ def delete_vehicle_membership_request(*,membership_request_id,deleted_by,):
 
 """
 +++++++++++++++++++++++++++++++++++++++++++++++++++
-AANULATION DUNE SOUMISSION DUNE MEMBERSHIP REQUEST
+CANCELLATION DUNE SOUMISSION DUNE MEMBERSHIP 
 ++++++++++++++++++++++++++++++++++++++++++++++++++
 """
 
@@ -215,5 +217,145 @@ def cancel_vehicle_membership_request(*,membership_request_id,cancelled_by,):
     # Si la sauvegarde a réussi, notifier les parties concernées.
     # _notify_managers_membership_request_cancelled(membership_request=membership_request,# )
     #_notifiy_le_superviseur lui meme
+
+    return membership_request
+
+
+
+
+"""
++++++++++++++++++++++++++++++++++++++++++++++++++++
+APPROBATION DUNE SOUMISSION DUNE MEMBERSHIP 
+++++++++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+# -------------------------------------------------------------------
+# Vérifie qu'une demande peut être approuvée.
+# Seules les demandes en statut PENDING peuvent être approuvées.
+# -------------------------------------------------------------------
+def _ensure_request_can_be_approved(*, membership_request):
+    if membership_request.status != VehicleMembershipRequestStatus.PENDING:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seules les demandes en statut PENDING "
+                    "peuvent être approuvées."
+                )
+            }
+        )
+
+
+
+
+# -------------------------------------------------------------------
+# Approuve une demande d'appartenance d'un véhicule à la flotte.
+#
+# Étapes :
+# 1. Récupérer la demande existante et non supprimée.
+# 2. Vérifier que la demande est en statut PENDING.
+# 3. Vérifier que le véhicule existe toujours et n'est pas supprimé.
+# 4. Vérifier que le véhicule n'a pas déjà une appartenance active.
+# 5. Vérifier que le transporteur associé au véhicule est toujours actif.
+# 6. Créer le VehicleMembership correspondant à la demande.
+# 7. Passer la demande au statut APPROVED.
+# 8. Enregistrer le manager ayant pris la décision.
+# 9. Enregistrer la date, le commentaire et l'utilisateur de modification.
+# 10. Sauvegarder la demande et retourner le résultat de l'approbation.
+# -------------------------------------------------------------------
+@transaction.atomic
+def approve_vehicle_membership_request(*,membership_request_id,approved_by,decision_comment=None,):
+    membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
+
+    _ensure_request_can_be_approved(membership_request=membership_request,)
+    vehicle = _get_vehicle_or_error(vehicle_id=membership_request.vehicle_id,)
+    _ensure_vehicle_has_no_active_membership(vehicle=vehicle,)
+    carrier = _get_valid_carrier_or_error(vehicle=vehicle,)
+
+    VehicleMembership.objects.create(
+    vehicle=vehicle,
+    carrier=carrier,
+    entry_date=membership_request.requested_entry_date,
+    membership_type=membership_request.membership_type,
+    status=VehicleMembershipStatus.ACTIVE,
+    created_by=approved_by,
+    updated_by=approved_by,)
+
+    membership_request.status = VehicleMembershipRequestStatus.APPROVED
+    membership_request.decided_by = approved_by
+    membership_request.decided_at = timezone.now()
+    membership_request.decision_comment = decision_comment
+    membership_request.updated_by = approved_by
+
+    activate_vehicle(vehicle=vehicle,updated_by=approved_by,)
+
+    membership_request.save(
+    update_fields=[
+        "status",
+        "decided_by",
+        "decided_at",
+        "decision_comment",
+        "updated_by",
+        "updated_at",
+    ])
+
+    return membership_request
+
+
+
+"""
++++++++++++++++++++++++++++++++++++++++++++++++++++
+REJET DUNE SOUMISSION DUNE MEMBERSHIP 
+++++++++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+# -------------------------------------------------------------------
+# Vérifie qu'une demande peut être rejetée.
+# Seules les demandes en statut PENDING peuvent être rejetées.
+# -------------------------------------------------------------------
+def _ensure_request_can_be_rejected(*, membership_request):
+    if membership_request.status != VehicleMembershipRequestStatus.PENDING:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seules les demandes en statut PENDING "
+                    "peuvent être rejetées."
+                )
+            }
+        )
+    
+# -------------------------------------------------------------------
+# Rejette une demande d'appartenance d'un véhicule à la flotte.
+#
+# Étapes :
+# 1. Récupérer la demande existante et non supprimée.
+# 2. Vérifier que la demande est en statut PENDING.
+# 3. Passer la demande au statut REJECTED.
+# 4. Enregistrer le manager ayant pris la décision.
+# 5. Enregistrer la date et le commentaire de la décision.
+# 6. Enregistrer l'utilisateur ayant effectué la modification.
+# 7. Sauvegarder et retourner la demande rejetée.
+# -------------------------------------------------------------------
+@transaction.atomic
+def reject_vehicle_membership_request(*,membership_request_id,rejected_by,decision_comment=None,):
+    membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
+
+    _ensure_request_can_be_rejected(membership_request=membership_request,)
+
+    membership_request.status = VehicleMembershipRequestStatus.REJECTED
+    membership_request.decided_by = rejected_by
+    membership_request.decided_at = timezone.now()
+    membership_request.decision_comment = decision_comment
+    membership_request.updated_by = rejected_by
+
+    membership_request.save(
+        update_fields=[
+            "status",
+            "decided_by",
+            "decided_at",
+            "decision_comment",
+            "updated_by",
+            "updated_at",
+        ]
+    )
 
     return membership_request
