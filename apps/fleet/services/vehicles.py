@@ -1,3 +1,4 @@
+from apps.fleet.constants import CarrierStatus
 from apps.fleet.models import Vehicle
 from rest_framework.exceptions import ValidationError
 
