@@ -309,8 +309,10 @@ class VehicleMembershipSerializer(serializers.ModelSerializer):
             "deleted_by",
         ]
 
-# -- FleetMembership
+# -- VehicleMembershipRequest
 class VehicleMembershipRequestSerializer(serializers.ModelSerializer):
+    carrier = CarrierSummarySerializer(source="vehicle.carrier",read_only=True,)
+ #   vehicle = VehicleSummarySerializer(read_only=True,)
     class Meta:
         model = VehicleMembershipRequest
         fields = "__all__"
@@ -325,7 +327,14 @@ class VehicleMembershipRequestSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
+    def to_representation(self, instance):
+        representation = super().to_representation(instance)
 
+        representation["vehicle"] = VehicleSummarySerializer(
+            instance.vehicle
+        ).data
+
+        return representation
 
 
 # -- VehicleDocument

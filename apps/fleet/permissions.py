@@ -113,23 +113,20 @@ class VehicleMembershipPermission(BaseGroupPermission):
 # -- FleetMembershipPermission
 class VehicleMembershipRequestPermission(BaseGroupPermission):
 
-    def _get_allowed_groups(self, request):
-        if request.method in SAFE_METHODS:
-            return [
+    def _get_allowed_groups(self, request, view):
+            if (view.action =="create"):
+                return [UserGroup.SUPERVISOR]   
+            else:  
+                return [
                 UserGroup.MANAGER,
                 UserGroup.SUPERVISOR,
             ]
-
-        return [
-            UserGroup.MANAGER,
-            UserGroup.SUPERVISOR,
-        ]
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False
 
-        allowed_groups = self._get_allowed_groups(request)
+        allowed_groups = self._get_allowed_groups(request,view)
 
         return self._has_any_group(
             request,

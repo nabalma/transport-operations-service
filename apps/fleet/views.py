@@ -1,5 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
+from apps.fleet.services import create_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 
 
@@ -14,7 +15,7 @@ class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
    
 
 class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
-   queryset = Vehicle.objects.select_related("carrier").prefetch_related( "tanker_compartments","fleet_memberships","documents").filter(is_deleted=False)
+   queryset = Vehicle.objects.select_related("carrier").prefetch_related( "tanker_compartments","vehicle_memberships","documents").filter(is_deleted=False)
    serializer_class = VehicleSerializer
    permission_classes=[VehiclePermission]
 
@@ -35,6 +36,16 @@ class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
     queryset = VehicleMembershipRequest.objects.filter(is_deleted=False)
     serializer_class = VehicleMembershipRequestSerializer
     permission_classes =[VehicleMembershipRequestPermission]
+
+    def perform_create(self, serializer):
+        membership_request = create_vehicle_membership_request(
+            vehicle_id=serializer.validated_data["vehicle"].id,
+            requested_entry_date=serializer.validated_data["requested_entry_date"],
+            membership_type=serializer.validated_data["membership_type"],
+            created_by=self.request.user,
+        )
+
+        serializer.instance = membership_request
  
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

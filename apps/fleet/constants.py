@@ -21,6 +21,7 @@ class CarrierStatus(models.TextChoices):
 # Ne remplace pas Availability ni Eligibility.
 # -------------------------------------------------------------------
 class VehicleStatus(models.TextChoices):
+    AWAITING_FLEET_ENTRY = "AWAITING_FLEET_ENTRY", "Awaiting fleet entry"
     ACTIVE = "ACTIVE", "Active"
     INACTIVE = "INACTIVE", "Inactive"
     OUT_OF_SERVICE = "OUT_OF_SERVICE", "Out of service"

@@ -117,7 +117,7 @@ class Vehicle(TimeStampedSoftDeletableModel):
     vehicle_coupling_end_date = models.DateField(blank=True, null=True)
 
     # Statut général. Ne remplace pas l’éligibilité ni la disponibilité.
-    status = models.CharField(max_length=30, choices=VehicleStatus.choices, default=VehicleStatus.ACTIVE)
+    status = models.CharField(max_length=30, choices=VehicleStatus.choices, default=VehicleStatus.AWAITING_FLEET_ENTRY)
 
     class Meta:
         constraints = [
@@ -202,9 +202,6 @@ class VehicleMembershipRequest(TimeStampedSoftDeletableModel):
     # Véhicule concerné par la demande.
     vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name="membership_requests",)
 
-    # Transporteur auquel le véhicule doit être rattaché.
-    carrier = models.ForeignKey(Carrier,on_delete=models.PROTECT,related_name="vehicle_membership_requests",)
-
     # Date d’entrée souhaitée dans la flotte.
     requested_entry_date = models.DateField()
 
@@ -222,6 +219,10 @@ class VehicleMembershipRequest(TimeStampedSoftDeletableModel):
 
     # Commentaire fourni lors de l’approbation ou du rejet.
     decision_comment = models.TextField(blank=True,null=True,)
+
+    @property
+    def carrier(self):
+        return self.vehicle.carrier
 
     def __str__(self):
         return f"{self.vehicle} - {self.status}"
