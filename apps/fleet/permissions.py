@@ -132,3 +132,10 @@ class VehicleMembershipRequestPermission(BaseGroupPermission):
             request,
             allowed_groups,
         )
+    
+
+    def has_object_permission(self, request, view, obj):
+        if view.action == "cancel":
+            return obj.created_by == request.user
+
+        return True

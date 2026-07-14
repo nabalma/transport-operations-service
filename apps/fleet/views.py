@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.membership_requests import create_vehicle_membership_request, submit_vehicle_membership_request
+from apps.fleet.services.membership_requests import cancel_vehicle_membership_request, create_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
@@ -64,6 +64,21 @@ class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
         )
         serializer = self.get_serializer(submitted_request)
         return Response(serializer.data,status=status.HTTP_200_OK,)
+    
+  # Pour lannulation de la requete. Lurl devra etre
+    # POST /api/fleet/vehicle-membership-requests/<id>/cancel/
+    @action(detail=True, methods=["post"])
+    def cancel(self, request, pk=None):
+        membership_request = self.get_object()
+
+        cancelled_request = cancel_vehicle_membership_request(
+            membership_request_id=membership_request.id,
+            cancelled_by=request.user,
+        )
+
+        serializer = self.get_serializer(cancelled_request)
+        return Response(serializer.data,status=status.HTTP_200_OK,)
+
  
 
 class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

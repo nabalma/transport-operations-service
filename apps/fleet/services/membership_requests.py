@@ -143,5 +143,77 @@ def submit_vehicle_membership_request(*,membership_request_id,submitted_by,):
     #Si le save a marché, envoyer le email en asynchrone
     _notify_manager_membership_request_submitted(membership_request=membership_request,)
 
+    return membership_request
+
+
+
+# -------------------------------------------------------------------
+# Soumet une demande d'appartenance à la flotte.
+#
+# Étapes :
+# 1. Récupérer la demande.
+# 2. Vérifier qu'elle peut être soumise.
+# 3. Passer son statut à PENDING.
+# 4. Enregistrer l'utilisateur ayant fait la modification.
+# 5. Sauvegarder et retourner la demande.
+# -------------------------------------------------------------------
+def delete_vehicle_membership_request(*,membership_request_id,deleted_by,):
+    membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
+    
+    _ensure_request_can_be_submitted(membership_request=membership_request,)
+    membership_request.is_deleted=True
+    membership_request.status = VehicleMembershipRequestStatus.CANCELLED
+    membership_request.updated_by = deleted_by
+    membership_request.deleted_by = deleted_by
+    membership_request.save(update_fields=["is_deleted","status","updated_by","updated_at","deleted_by","deleted_at"])
+
+    #Si le save a marché, envoyer le email en asynchrone
+    _notify_manager_membership_request_submitted(membership_request=membership_request,)
+
+    return membership_request
+
+
+
+"""
++++++++++++++++++++++++++++++++++++++++++++++++++++
+AANULATION DUNE SOUMISSION DUNE MEMBERSHIP REQUEST
+++++++++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+
+
+def _ensure_request_can_be_cancelled(*, membership_request):
+    if membership_request.status != VehicleMembershipRequestStatus.DRAFT:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seules les demandes en statut DRAFT "
+                    "peuvent être annulées."
+                )
+            }
+        )
+    
+# -------------------------------------------------------------------
+# Annule une demande d'appartenance à la flotte.
+#
+# Étapes :
+# 1. Récupérer la demande.
+# 2. Vérifier qu'elle peut être annulée.
+# 3. Passer son statut à CANCELLED.
+# 4. Enregistrer l'utilisateur ayant effectué l'annulation.
+# 5. Sauvegarder la demande.
+# 6. Notifier les parties concernées si nécessaire.
+# -------------------------------------------------------------------
+def cancel_vehicle_membership_request(*,membership_request_id,cancelled_by,):
+    membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
+
+    _ensure_request_can_be_cancelled(membership_request=membership_request,)
+    membership_request.status = VehicleMembershipRequestStatus.CANCELLED
+    membership_request.updated_by = cancelled_by
+    membership_request.save(update_fields=["status","updated_by","updated_at",])
+
+    # Si la sauvegarde a réussi, notifier les parties concernées.
+    # _notify_managers_membership_request_cancelled(membership_request=membership_request,# )
+    #_notifiy_le_superviseur lui meme
 
     return membership_request
