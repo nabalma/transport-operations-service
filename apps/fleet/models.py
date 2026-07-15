@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
-from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
+from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
 # -------------------------------------------------------------------
 # 1-Base model
@@ -83,6 +83,26 @@ class Carrier(TimeStampedSoftDeletableModel):
 
 
 # -------------------------------------------------------------------
+# VehicleAgePolicyConfiguration
+# Configuration des limites d'âge applicables aux véhicules.
+# Chaque nouvelle configuration conserve l'historique des anciennes
+# limites grâce à sa période d'application.
+# -------------------------------------------------------------------
+class VehicleAgePolicyConfiguration(TimeStampedModel):
+    target = models.CharField(max_length=20,choices=VehicleAgePolicyTarget.choices,)
+    maximum_allowed_age = models.PositiveSmallIntegerField()
+    effective_from = models.DateTimeField()
+    effective_to = models.DateTimeField(blank=True,null=True,)
+
+    class Meta:
+        constraints = [ 
+            models.UniqueConstraint(
+            fields=["target", "effective_from"],
+            name="unique_vehicle_age_policy_period",
+        ),]
+
+
+# -------------------------------------------------------------------
 # 3-Vehicle
 # Objet principal du module. Représente le camion terrain :
 # couple tracteur + citerne. En V1, Tractor et Tanker ne sont pas
@@ -97,14 +117,14 @@ class Vehicle(TimeStampedSoftDeletableModel):
     # Immatriculation du tracteur.
     tractor_registration = models.CharField(max_length=50)
 
-    # Année de fabrication du tracteur.
-    tractor_manufacture_year = models.PositiveSmallIntegerField(blank=True, null=True)
+    # Année de fabrication du tracteur, rendu obligatoire a la creation du camion. 
+    tractor_manufacture_year = models.PositiveSmallIntegerField()
 
-    # Immatriculation de la citerne.
+    # Immatriculation de la citerne. rendu obligatoire a la creation du camion
     tanker_registration = models.CharField(max_length=50)
 
-      # Année de fabrication de la citerne.
-    tanker_manufacture_year = models.PositiveSmallIntegerField(blank=True, null=True)
+      # Année de fabrication de la citerne,
+    tanker_manufacture_year = models.PositiveSmallIntegerField()
 
 
     # Immatriculation affichée : tracteur / citerne. Calculée dans save().

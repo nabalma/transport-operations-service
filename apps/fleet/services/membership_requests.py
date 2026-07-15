@@ -1,6 +1,6 @@
-from apps.fleet.constants import CarrierStatus, VehicleMembershipRequestStatus, VehicleMembershipStatus
+from apps.fleet.constants import CarrierStatus, VehicleAgePolicyTarget, VehicleMembershipRequestStatus, VehicleMembershipStatus
 from apps.fleet.models import Vehicle, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.services.vehicles import _get_valid_carrier_or_error, _get_vehicle_or_error, activate_vehicle
+from apps.fleet.services.vehicles import _ensure_vehicle_age_is_allowed, _get_current_vehicle_age_policy_or_error, _get_valid_carrier_or_error, _get_vehicle_or_error, activate_vehicle
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 from django.db import transaction
@@ -256,11 +256,14 @@ def _ensure_request_can_be_approved(*, membership_request):
 # 3. Vérifier que le véhicule existe toujours et n'est pas supprimé.
 # 4. Vérifier que le véhicule n'a pas déjà une appartenance active.
 # 5. Vérifier que le transporteur associé au véhicule est toujours actif.
-# 6. Créer le VehicleMembership correspondant à la demande.
-# 7. Passer la demande au statut APPROVED.
-# 8. Enregistrer le manager ayant pris la décision.
-# 9. Enregistrer la date, le commentaire et l'utilisateur de modification.
-# 10. Sauvegarder la demande et retourner le résultat de l'approbation.
+# 6. Récupérer les politiques d'âge applicables au tracteur et à la citerne.
+# 7. Vérifier que l'âge du tracteur et de la citerne respecte les limites.
+# 8. Créer le VehicleMembership correspondant à la demande.
+# 9. Passer la demande au statut APPROVED.
+# 10. Enregistrer le manager ayant pris la décision.
+# 11. Enregistrer la date, le commentaire et l'utilisateur de modification.
+# 12. Activer le véhicule.
+# 13. Sauvegarder et retourner la demande approuvée.
 # -------------------------------------------------------------------
 @transaction.atomic
 def approve_vehicle_membership_request(*,membership_request_id,approved_by,decision_comment=None,):
@@ -270,6 +273,9 @@ def approve_vehicle_membership_request(*,membership_request_id,approved_by,decis
     vehicle = _get_vehicle_or_error(vehicle_id=membership_request.vehicle_id,)
     _ensure_vehicle_has_no_active_membership(vehicle=vehicle,)
     carrier = _get_valid_carrier_or_error(vehicle=vehicle,)
+    tractor_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TRACTOR,)
+    tanker_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TANKER,)
+    _ensure_vehicle_age_is_allowed(vehicle=vehicle,tractor_policy=tractor_policy,tanker_policy=tanker_policy,)
 
     VehicleMembership.objects.create(
     vehicle=vehicle,

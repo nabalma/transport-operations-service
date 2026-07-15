@@ -69,6 +69,15 @@ class VehicleScope(models.TextChoices):
     TRACTOR = "TRACTOR", "Tractor"
     TANKER = "TANKER", "Tanker"
 
+# -------------------------------------------------------------------
+# VehicleAgePolicyTarget
+# Cible de la règle de limitation d'âge appliquée au véhicule.
+# Permet de distinguer les limites applicables au tracteur
+# et à la citerne.
+# -------------------------------------------------------------------
+class VehicleAgePolicyTarget(models.TextChoices):
+    TRACTOR = "TRACTOR", "Tractor"
+    TANKER = "TANKER", "Tanker"
 
 # -------------------------------------------------------------------
 # VehicleDocumentType

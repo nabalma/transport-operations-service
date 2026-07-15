@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -254,7 +254,18 @@ class CarrierSerializer(serializers.ModelSerializer):
         fields = "__all__"
 
 
+# -- VehicleAgePolicyConfiguration
+class VehicleAgePolicyConfigurationSerializer(serializers.ModelSerializer):
 
+    class Meta:
+        model = VehicleAgePolicyConfiguration
+        fields = "__all__"
+        read_only_fields = [
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        ]
 
 # -- Vehicle 
 class VehicleSerializer(serializers.ModelSerializer):

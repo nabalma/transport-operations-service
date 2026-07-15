@@ -1,8 +1,9 @@
-from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet,InspectionContextCriterionViewSet, InspectionContextSectionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
+from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet,InspectionContextCriterionViewSet, InspectionContextSectionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register("carriers", CarrierViewSet, basename="carrier")
+router.register("vehicle-age-policy-configurations",VehicleAgePolicyConfigurationViewSet,basename="vehicle-age-policy-configuration",)
 router.register("vehicles", VehicleViewSet, basename="vehicle")
 router.register("tanker-compartments",TankerCompartmentViewSet, basename = "tanker-compartment")
 router.register("vehicle-memberships",VehicleMembershipViewSet,basename="vehicle-membership",)
