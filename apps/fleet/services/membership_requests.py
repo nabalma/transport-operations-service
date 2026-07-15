@@ -138,6 +138,12 @@ def _notify_manager_membership_request_submitted(*,membership_request,):
 def submit_vehicle_membership_request(*,membership_request_id,submitted_by,):
     membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
     _ensure_request_can_be_submitted(membership_request=membership_request,)
+    
+    vehicle = _get_vehicle_or_error(vehicle_id=membership_request.vehicle_id,)
+    tractor_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TRACTOR,)
+    tanker_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TANKER,)
+    _ensure_vehicle_age_is_allowed(vehicle=vehicle,tractor_policy=tractor_policy,tanker_policy=tanker_policy,)
+
     membership_request.status = VehicleMembershipRequestStatus.PENDING
     membership_request.updated_by = submitted_by
     membership_request.save(update_fields=["status","updated_by","updated_at",])
