@@ -79,7 +79,7 @@ class VehiclePermission(BaseGroupPermission):
 
         return self._has_any_group(request,allowed_groups,)
     
-# -- FleetMembershipPermission
+# -- VehicleMembershipPermission
 class VehicleMembershipPermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request):
@@ -104,7 +104,7 @@ class VehicleMembershipPermission(BaseGroupPermission):
         return self._has_any_group(request,allowed_groups,)
     
 
-# -- FleetMembershipPermission
+# -- VehicleMembershipRequestPermission
 class VehicleMembershipRequestPermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request, view):
@@ -154,7 +154,4 @@ class VehicleAgePolicyConfigurationPermission(BaseGroupPermission):
             request,
         )
 
-        return self._has_any_group(
-            request,
-            allowed_groups,
-        )
+        return self._has_any_group(request,allowed_groups,)

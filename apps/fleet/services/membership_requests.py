@@ -138,7 +138,7 @@ def _notify_manager_membership_request_submitted(*,membership_request,):
 def submit_vehicle_membership_request(*,membership_request_id,submitted_by,):
     membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
     _ensure_request_can_be_submitted(membership_request=membership_request,)
-    
+
     vehicle = _get_vehicle_or_error(vehicle_id=membership_request.vehicle_id,)
     tractor_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TRACTOR,)
     tanker_policy = _get_current_vehicle_age_policy_or_error(target=VehicleAgePolicyTarget.TANKER,)
@@ -156,14 +156,7 @@ def submit_vehicle_membership_request(*,membership_request_id,submitted_by,):
 
 
 # -------------------------------------------------------------------
-# Soumet une demande d'appartenance à la flotte.
-#
-# Étapes :
-# 1. Récupérer la demande.
-# 2. Vérifier qu'elle peut être soumise.
-# 3. Passer son statut à PENDING.
-# 4. Enregistrer l'utilisateur ayant fait la modification.
-# 5. Sauvegarder et retourner la demande.
+# Supprimer  une demande d'appartenance à la flotte.
 # -------------------------------------------------------------------
 def delete_vehicle_membership_request(*,membership_request_id,deleted_by,):
     membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
