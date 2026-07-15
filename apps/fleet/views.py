@@ -1,5 +1,5 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
-from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
+from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
 from apps.fleet.services.membership_requests import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -15,13 +15,11 @@ class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
     queryset = Carrier.objects.prefetch_related("vehicles")
     serializer_class = CarrierSerializer
 
-class VehicleAgePolicyConfigurationViewSet(
-    AuditUserMixin,
-    ModelViewSet,
-):
+
+class VehicleAgePolicyConfigurationViewSet(AuditUserMixin,ModelViewSet,):
     queryset = VehicleAgePolicyConfiguration.objects.all()
     serializer_class = VehicleAgePolicyConfigurationSerializer
-    permission_classes = [VehicleMembershipPermission]
+    permission_classes = [VehicleAgePolicyConfigurationPermission]
 
     
        
