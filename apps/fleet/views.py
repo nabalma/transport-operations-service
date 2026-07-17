@@ -1,5 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
+from apps.fleet.services.inspections import create_inspection_version
 from apps.fleet.services.membership_requests import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -125,6 +126,15 @@ class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = InspectionVersion.objects.filter(is_deleted=False)
     serializer_class = InspectionVersionSerializer
     permission_classes = [InspectionConfigurationPermission]
+
+    def perform_create(self, serializer):
+        serializer.instance = create_inspection_version(
+            context=serializer.validated_data["context"],
+            version=serializer.validated_data["version"],
+            source_version=serializer.validated_data.get("source_version"),
+            is_current=serializer.validated_data.get("is_current", False),
+            created_by=self.request.user,
+        )
 
 
 class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
