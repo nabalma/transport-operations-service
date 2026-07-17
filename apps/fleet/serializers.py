@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from django.core.exceptions import ValidationError as DjangoValidationError
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -391,8 +390,33 @@ class InspectionVersionSerializer(serializers.ModelSerializer):
             "updated_at",
             "updated_by",
         )
-    
-   
+
+
+    def validate(self, attrs):
+        if self.instance is not None:
+            immutable_fields = (
+            "context",
+            "version",
+            "source_version",
+        )
+
+            modified_fields = [
+            field
+            for field in immutable_fields
+            if field in attrs
+            and attrs[field] != getattr(self.instance, field)
+        ]
+
+            if modified_fields:
+                raise serializers.ValidationError(
+                {
+                    field: "Ce champ ne peut pas être modifié."
+                    for field in modified_fields
+                }
+            )
+
+        return attrs
+ 
 
         
 # -- InspectionSection
@@ -434,27 +458,6 @@ class InspectionCriterionSerializer(serializers.ModelSerializer):
  
 # -- InspectionContextSection
 class InspectionContextSectionSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = InspectionContextSection
-        fields = (
-            "id",
-            "inspection_version",
-            "section",
-            "reference",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-        )
-
-        read_only_fields = (
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-        )
 
     class Meta:
         model = InspectionContextSection
