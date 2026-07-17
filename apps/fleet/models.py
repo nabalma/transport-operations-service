@@ -6,6 +6,8 @@ from django.db import models
 from apps.fleet.upload_paths import vehicle_document_upload_path
 from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
+from django.core.exceptions import ValidationError
+
 # -------------------------------------------------------------------
 # 1-Base model
 # Modèle abstrait commun pour created_at et updated_at.
@@ -339,6 +341,47 @@ class InspectionCriterion(TimeStampedSoftDeletableModel):
     def __str__(self):
         return self.code
 
+# -------------------------------------------------------------------
+# -- InspectionVersion
+# Représente une version précise d’un contexte d’inspection.
+#
+# Chaque contexte évolue indépendamment et possède son propre historique
+# de versions. Une nouvelle version constitue un snapshot complet des
+# sections, sous-sections et critères du contexte concerné.
+#
+# Le numéro de version est saisi manuellement par l’utilisateur.
+# -------------------------------------------------------------------
+class InspectionVersion(TimeStampedSoftDeletableModel):
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
+
+    context = models.CharField(max_length=30,choices=InspectionContext.choices,)
+
+    version = models.CharField(max_length=20,)
+
+    source_version = models.ForeignKey(
+    "self",
+    on_delete=models.PROTECT,
+    related_name="derived_versions",
+    null=True,
+    blank=True,
+)
+
+    is_current = models.BooleanField(default=False,)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["context", "version"],
+                name="unique_inspection_version_per_context",
+            ),
+        ]
+
+        ordering = ["context","-created_at",]
+      
+
+    def __str__(self):
+        return f"{self.get_context_display()} - {self.version}"
+
 
 # -------------------------------------------------------------------
 # 9-InspectionContextSection
@@ -346,25 +389,35 @@ class InspectionCriterion(TimeStampedSoftDeletableModel):
 # Exemple : section ÉTAT DU TRACTEUR en position "1" dans BEFORE_TRIP.
 # -------------------------------------------------------------------
 class InspectionContextSection(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    # Contexte d’inspection : périodique, avant voyage, après incident, etc.
-    context = models.CharField(max_length=30, choices=InspectionContext.choices)
+    # Version précise du contexte d’inspection.
+    inspection_version = models.ForeignKey(InspectionVersion,on_delete=models.CASCADE,related_name="context_sections",null=True,blank=True)
 
-    # Section réutilisable placée dans ce contexte.
-    section = models.ForeignKey(InspectionSection, on_delete=models.PROTECT, related_name="context_sections")
+    # Section placée dans cette version du contexte.
+    section = models.ForeignKey(InspectionSection,on_delete=models.PROTECT,related_name="context_sections",)
 
     # Référence affichée dans la fiche : "1", "2", "3", etc.
-    reference = models.CharField(max_length=20)
+    reference = models.CharField(max_length=20,)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["context", "section"], name="unique_section_per_inspection_context"),
-            models.UniqueConstraint(fields=["context", "reference"], name="unique_section_reference_per_context"),
+            models.UniqueConstraint(
+                fields=["inspection_version", "section"],
+                name="unique_section_per_inspection_version",
+            ),
+            models.UniqueConstraint(
+                fields=["inspection_version", "reference"],
+                name="unique_section_reference_per_inspection_version",
+            ),
         ]
 
     def __str__(self):
-        return f"{self.context} - {self.reference} {self.section.title}"
+        return (
+            f"{self.inspection_version.context} "
+            f"{self.inspection_version.version} - "
+            f"{self.reference} {self.section.title}"
+        )
 
 
 # -------------------------------------------------------------------

@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -365,6 +366,35 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             "deleted_by",
         ]
 
+
+# -- InspectionVersionSerializer
+class InspectionVersionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InspectionVersion
+        fields = (
+            "id",
+            "context",
+            "version",
+            "source_version",
+            "is_current",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+
+        read_only_fields = (
+            "id",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+    
+   
+
+        
 # -- InspectionSection
 class InspectionSectionSerializer(serializers.ModelSerializer):
     class Meta:
@@ -404,6 +434,28 @@ class InspectionCriterionSerializer(serializers.ModelSerializer):
  
 # -- InspectionContextSection
 class InspectionContextSectionSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = InspectionContextSection
+        fields = (
+            "id",
+            "inspection_version",
+            "section",
+            "reference",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+
+        read_only_fields = (
+            "id",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+
     class Meta:
         model = InspectionContextSection
         fields = "__all__"

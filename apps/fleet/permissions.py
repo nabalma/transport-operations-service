@@ -40,7 +40,7 @@ class InspectionConfigurationPermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request):
         if request.method in SAFE_METHODS:
-            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,]
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,UserGroup.MANAGER]
 
         return [UserGroup.SUPERVISOR,]
 
@@ -155,3 +155,4 @@ class VehicleAgePolicyConfigurationPermission(BaseGroupPermission):
         )
 
         return self._has_any_group(request,allowed_groups,)
+    
