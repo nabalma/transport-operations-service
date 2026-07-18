@@ -99,6 +99,7 @@ class VehicleDocumentType(models.TextChoices):
 # Détermine quelles sections et quels critères apparaissent dans la fiche.
 # -------------------------------------------------------------------
 class InspectionContext(models.TextChoices):
+    DAILY_CHECK = "DAILY_CHECK", "Contrôle quotidien"
     PERIODIC = "PERIODIC", "Periodic"
     BEFORE_TRIP = "BEFORE_TRIP", "Before trip"
     AFTER_INCIDENT = "AFTER_INCIDENT", "After incident"

@@ -291,67 +291,29 @@ class VehicleDocument(TimeStampedSoftDeletableModel):
         return f"{self.vehicle} - {self.document_type}"
 
 
-# -------------------------------------------------------------------
-# 7-InspectionSection
-# Section réutilisable d’un questionnaire d’inspection.
-# Exemple : ÉTAT DU TRACTEUR, ÉTAT DE LA CITERNE.
-# -------------------------------------------------------------------
-class InspectionSection(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    # Code stable de la section.
-    code = models.CharField(max_length=100, unique=True)
-
-    # Titre affiché dans la fiche d’inspection.
-    title = models.CharField(max_length=255)
-
-    # Permet de désactiver une section sans supprimer l’historique.
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.title
-
-
-# -------------------------------------------------------------------
-# 8-InspectionCriterion
-# Critère stable d’inspection.
-# Exemple : ceinture fonctionnelle, fuite citerne, klaxon fonctionnel.
-# -------------------------------------------------------------------
-class InspectionCriterion(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    # Code stable du critère.
-    code = models.CharField(max_length=100, unique=True)
-
-    # Question ou libellé affiché à l’inspecteur.
-    label = models.TextField()
-
-    # Partie concernée : VEHICLE, TRACTOR ou TANKER.
-    scope = models.CharField(max_length=20, choices=VehicleScope.choices)
-
-    # Si true, un FAIL crée automatiquement un Defect.
-    creates_defect_if_failed = models.BooleanField(default=False)
-
-    # Si true, le Defect créé sera bloquant.
-    is_blocking_if_failed = models.BooleanField(default=False)
-
-    # Permet de désactiver un critère sans supprimer l’historique.
-    is_active = models.BooleanField(default=True)
-
-    def __str__(self):
-        return self.code
-
-# -------------------------------------------------------------------
-# -- InspectionVersion
-# Représente une version précise d’un contexte d’inspection.
+# =============================================================================
+# InspectionContextVersion
 #
-# Chaque contexte évolue indépendamment et possède son propre historique
-# de versions. Une nouvelle version constitue un snapshot complet des
-# sections, sous-sections et critères du contexte concerné.
+# Représente une version complète d’un formulaire d’inspection.
 #
-# Le numéro de version est saisi manuellement par l’utilisateur.
-# -------------------------------------------------------------------
-class InspectionVersion(TimeStampedSoftDeletableModel):
+# Exemples :
+# - DAILY_CHECK 0.0.0
+# - DAILY_CHECK 1.0.0
+# - DAILY_CHECK 1.1.0
+#
+# Chaque version possède ses propres sections et ses propres critères.
+#
+# `source_version` indique la version utilisée comme base lors de la création
+# du snapshot.
+#
+# Exemple :
+# - 1.0.0 est créée depuis 0.0.0
+# - 1.1.0 est créée depuis 1.0.0
+#
+# Une ancienne version ne doit pas être modifiée lorsque l’utilisateur
+# modifie une nouvelle version.
+# =============================================================================
+class InspectionContextVersion(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
     context = models.CharField(max_length=30,choices=InspectionContext.choices,)
@@ -359,12 +321,12 @@ class InspectionVersion(TimeStampedSoftDeletableModel):
     version = models.CharField(max_length=20,)
 
     source_version = models.ForeignKey(
-    "self",
-    on_delete=models.PROTECT,
-    related_name="derived_versions",
-    null=True,
-    blank=True,
-)
+        "self",
+        on_delete=models.PROTECT,
+        related_name="derived_versions",
+        null=True,
+        blank=True,
+    )
 
     is_current = models.BooleanField(default=False,)
 
@@ -376,133 +338,251 @@ class InspectionVersion(TimeStampedSoftDeletableModel):
             ),
         ]
 
-        ordering = ["context","-created_at",]
-      
+        ordering = [
+            "context",
+            "-created_at",
+        ]
 
     def __str__(self):
         return f"{self.get_context_display()} - {self.version}"
 
 
-# -------------------------------------------------------------------
-# 9-InspectionContextSection
-# Place une section dans un contexte d’inspection.
-# Exemple : section ÉTAT DU TRACTEUR en position "1" dans BEFORE_TRIP.
-# -------------------------------------------------------------------
-class InspectionContextSection(TimeStampedSoftDeletableModel):
+# =============================================================================
+# InspectionSection
+#
+# Représente une section appartenant à une version précise du formulaire.
+#
+# Exemples de références :
+# - I
+# - II
+# - 1
+# - 2
+#
+# Exemple de section :
+# - reference = "1"
+# - code = "TRACTOR_CONDITION"
+# - title = "État du tracteur"
+#
+# `reference` est la valeur visible dans le formulaire.
+#
+# `code` est un identifiant technique utilisé par le backend, les imports,
+# les tests ou les intégrations.
+#
+# Une section est propre à une version. Deux versions peuvent donc avoir
+# des sections avec le même code, mais ces sections seront deux lignes
+# différentes en base de données.
+# =============================================================================
+class InspectionSection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    # Version précise du contexte d’inspection.
-    inspection_version = models.ForeignKey(InspectionVersion,on_delete=models.CASCADE,related_name="context_sections",null=True,blank=True)
+    inspection_version = models.ForeignKey(
+    InspectionContextVersion,
+    on_delete=models.CASCADE,
+    related_name="sections",
+)
 
-    # Section placée dans cette version du contexte.
-    section = models.ForeignKey(InspectionSection,on_delete=models.PROTECT,related_name="context_sections",)
-
-    # Référence affichée dans la fiche : "1", "2", "3", etc.
     reference = models.CharField(max_length=20,)
+    code = models.CharField(max_length=100,)
+    title = models.CharField(max_length=255,)
+    is_active = models.BooleanField(default=True,)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["inspection_version", "section"],
-                name="unique_section_per_inspection_version",
-            ),
             models.UniqueConstraint(
                 fields=["inspection_version", "reference"],
                 name="unique_section_reference_per_inspection_version",
             ),
+            models.UniqueConstraint(
+                fields=["inspection_version", "code"],
+                name="unique_section_code_per_inspection_version",
+            ),
+        ]
+
+        ordering = [
+            "reference",
         ]
 
     def __str__(self):
         return (
-            f"{self.inspection_version.context} "
-            f"{self.inspection_version.version} - "
-            f"{self.reference} {self.section.title}"
+            f"{self.inspection_version} - "
+            f"{self.reference} {self.title}"
         )
 
 
-# -------------------------------------------------------------------
-# 10-InspectionContextCriterion
-# Place un critère dans une section utilisée par un contexte donné.
-# Exemple : 1.1 - Ceinture de sécurité.
-# -------------------------------------------------------------------
-class InspectionContextCriterion(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+# =============================================================================
+# InspectionCriterion
+#
+# Représente un critère appartenant à une section versionnée.
+#
+# Exemple :
+# - reference = "1.1"
+# - code = "BRAKES_WORKING"
+# - label = "Les freins fonctionnent correctement"
+#
+# `reference` est le numéro visible dans le formulaire.
+#
+# `code` est l’identifiant technique du critère.
+#
+# Le libellé et les règles métier du critère font partie du snapshot.
+# Modifier un critère dans une nouvelle version ne modifie donc pas les
+# critères des anciennes versions.
+#
+# La version du critère est accessible par :
+#
+# criterion.section.inspection_version
+# =============================================================================
+class InspectionCriterion(TimeStampedSoftDeletableModel):
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    # Section de contexte dans laquelle le critère apparaît.
-    context_section = models.ForeignKey(InspectionContextSection, on_delete=models.CASCADE, related_name="context_criteria")
+    section = models.ForeignKey(
+    InspectionSection,
+    on_delete=models.CASCADE,
+    related_name="criteria",
+)
 
-    # Critère stable réutilisable.
-    criterion = models.ForeignKey(InspectionCriterion, on_delete=models.PROTECT, related_name="context_criteria")
-
-    # Référence affichée dans la fiche : "1.1", "2.2", etc.
-    reference = models.CharField(max_length=20)
+    reference = models.CharField(max_length=20,)
+    code = models.CharField(max_length=100,)
+    label = models.TextField()
+    scope = models.CharField(max_length=20,choices=VehicleScope.choices,)
+    creates_defect_if_failed = models.BooleanField(default=False,)
+    is_blocking_if_failed = models.BooleanField(default=False,)
+    is_active = models.BooleanField(default=True,)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["context_section", "criterion"], name="unique_criterion_per_context_section"),
-            models.UniqueConstraint(fields=["context_section", "reference"], name="unique_criterion_reference_per_context_section"),
+            models.UniqueConstraint(
+                fields=["section", "reference"],
+                name="unique_criterion_reference_per_section",
+            ),
+            models.UniqueConstraint(
+                fields=["section", "code"],
+                name="unique_criterion_code_per_section",
+            ),
+        ]
+
+        ordering = [
+            "reference",
         ]
 
     def __str__(self):
-        return f"{self.reference} - {self.criterion.code}"
+        return f"{self.reference} - {self.label}"
 
 
-# -------------------------------------------------------------------
-# 11-Inspection
-# Inspection réelle effectuée sur un Vehicle.
-# Les lignes de contrôle sont dans InspectionCriterionResult.
-# -------------------------------------------------------------------
+# =============================================================================
+# Inspection
+#
+# Représente une inspection réellement effectuée sur un véhicule.
+#
+# L’inspection conserve la version exacte du formulaire utilisée.
+#
+# Exemple :
+#
+# Une inspection effectuée avec DAILY_CHECK 1.0.0 doit toujours rester
+# associée à cette version, même si DAILY_CHECK 2.0.0 devient ensuite
+# la version courante.
+#
+# Le contexte ne doit pas être enregistré une seconde fois directement
+# dans Inspection. Il est disponible depuis :
+#
+# inspection.inspection_version.context
+#
+# La propriété `context` est fournie comme raccourci.
+# =============================================================================
 class Inspection(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
+    vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name="inspections",)
 
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="inspections")
+    inspection_version = models.ForeignKey(
+    InspectionContextVersion,
+    on_delete=models.PROTECT,
+    related_name="inspections",
+)
 
-    # Contexte de l’inspection.
-    context = models.CharField(max_length=30, choices=InspectionContext.choices)
-
-    # Date et heure réelles de l’inspection.
     inspection_date = models.DateTimeField()
+    inspector_name = models.CharField(max_length=255,)
+    overall_result = models.CharField(max_length=30,choices=InspectionOverallResult.choices,)
+    comments = models.TextField(blank=True,)
 
-    # Nom de l’inspecteur. Peut devenir inspector_id plus tard.
-    inspector_name = models.CharField(max_length=255)
-
-    # Résultat global de toute l’inspection.
-    overall_result = models.CharField(max_length=30, choices=InspectionOverallResult.choices)
-
-    # Commentaire général de l’inspection.
-    comments = models.TextField(blank=True)
+    @property
+    def context(self):
+        return self.inspection_version.context
 
     def __str__(self):
-        return f"{self.vehicle} - {self.context} - {self.inspection_date}"
+        return (
+            f"{self.vehicle} - "
+            f"{self.inspection_version} - "
+            f"{self.inspection_date}"
+        )
 
 
-# -------------------------------------------------------------------
-# 12-InspectionCriterionResult
-# Résultat d’un critère précis pendant une inspection réelle.
-# Peut générer automatiquement un Defect selon le critère.
-# -------------------------------------------------------------------
+# =============================================================================
+# InspectionCriterionResult
+#
+# Représente le résultat d’un critère pendant une inspection.
+#
+# Un résultat pointe directement vers un InspectionCriterion versionné.
+#
+# La contrainte d’unicité empêche d’enregistrer plusieurs résultats pour
+# le même critère dans une même inspection.
+#
+# La méthode `clean()` vérifie que le critère appartient à la même version
+# que celle utilisée par l’inspection.
+#
+# Exemple interdit :
+#
+# - Inspection créée avec DAILY_CHECK 1.0.0
+# - Critère appartenant à DAILY_CHECK 2.0.0
+#
+# Cette validation devra également être exécutée dans le service métier,
+# car Django n’appelle pas automatiquement `clean()` lors d’un `save()`.
+# =============================================================================
 class InspectionCriterionResult(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    inspection = models.ForeignKey(Inspection, on_delete=models.CASCADE, related_name="criterion_results")
+    inspection = models.ForeignKey(Inspection,on_delete=models.CASCADE,related_name="criterion_results",)
 
-    # Critère placé dans la fiche utilisée par cette inspection.
-    context_criterion = models.ForeignKey(InspectionContextCriterion, on_delete=models.PROTECT, related_name="inspection_results")
+    criterion = models.ForeignKey(
+    InspectionCriterion,
+    on_delete=models.PROTECT,
+    related_name="results",
+)
 
-    # Résultat du contrôle : PASS ou FAIL.
-    result = models.CharField(max_length=10, choices=InspectionCriterionResultValue.choices)
-
-    # Commentaire spécifique au critère.
-    comment = models.TextField(blank=True)
+    result = models.CharField(max_length=10,choices=InspectionCriterionResultValue.choices,)
+    comment = models.TextField(blank=True,)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["inspection", "context_criterion"], name="unique_result_per_inspection_criterion")
+            models.UniqueConstraint(
+                fields=["inspection", "criterion"],
+                name="unique_result_per_inspection_criterion",
+            ),
         ]
 
-    def __str__(self):
-        return f"{self.inspection} - {self.context_criterion.reference} - {self.result}"
+    def clean(self):
+        super().clean()
 
+        if not self.inspection_id or not self.criterion_id:
+            return
+
+        criterion_version_id = (self.criterion.section.inspection_version_id)
+        inspection_version_id = (self.inspection.inspection_version_id)
+
+        if criterion_version_id != inspection_version_id:
+            raise ValidationError(
+                {
+                    "criterion": (
+                        "Le critère n’appartient pas à la version "
+                        "utilisée par cette inspection."
+                    ),
+                }
+            )
+
+    def __str__(self):
+        return (
+            f"{self.inspection} - "
+            f"{self.criterion.reference} - "
+            f"{self.result}"
+        )
 
 # -------------------------------------------------------------------
 # 13-Defect

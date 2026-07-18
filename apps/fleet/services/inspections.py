@@ -1,7 +1,8 @@
+from apps.fleet.constants import InspectionContext
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
 
-from apps.fleet.models import InspectionVersion
+from apps.fleet.models import Inspection, InspectionContextVersion, Vehicle
 
 
 INITIAL_VERSION = "0.0.0"
@@ -12,7 +13,7 @@ INITIAL_VERSION = "0.0.0"
 #    - toute autre version doit avoir une source_version ;
 #    - la source_version doit appartenir au même contexte.
 @transaction.atomic
-def create_inspection_version(*,context: str,version: str,source_version: InspectionVersion | None, is_current: bool,created_by,) -> InspectionVersion:
+def create_inspection_version(*,context: str,version: str,source_version: InspectionContextVersion | None, is_current: bool,created_by,) -> InspectionContextVersion:
     """
     Crée une nouvelle version d'inspection.
     Règles métier :
@@ -52,8 +53,20 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
                     )
                 }
             )
+        
+        # Si cette version devient la version courante,
+    # on retire ce statut aux autres versions du même contexte.
+    if is_current:
+        InspectionContextVersion.objects.filter(
+            context=context,
+            is_current=True,
+            ).update(
+            is_current=False,
+            updated_by=created_by,
+        )
 
-    return InspectionVersion.objects.create(
+    # Création de la nouvelle version
+    return InspectionContextVersion.objects.create(
         context=context,
         version=version,
         source_version=source_version,
@@ -61,7 +74,7 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
         created_by=created_by,
     )
 
-def update_inspection_version_status(*,inspection_version: InspectionVersion,is_current: bool,updated_by,) -> InspectionVersion:
+def update_inspection_version_status(*,inspection_version: InspectionContextVersion,is_current: bool,updated_by,) -> InspectionContextVersion:
     """
     Met à jour uniquement le statut is_current d'une version d'inspection.
     Les champs context, version et source_version restent immuables.
@@ -87,3 +100,45 @@ def update_inspection_version_status(*,inspection_version: InspectionVersion,is_
     )
 
     return inspection_version 
+
+
+def _validate_inspection_type(inspection_type: str,) -> None:
+    """
+    Vérifie que le type d’inspection demandé est supporté.
+    Args:
+        inspection_type: Type d’inspection à valider.
+    Raises:
+        ValidationError: Si le type d’inspection est invalide.
+    """
+    valid_types = InspectionContext.values
+
+    if inspection_type not in valid_types:
+        raise ValidationError(
+            {
+                "inspection_type": (
+                    f"Type d’inspection invalide : {inspection_type}."
+                )
+            }
+        )
+
+
+
+def generate_inspection_sheet(*,vehicle: Vehicle,inspection_type: InspectionContext,inspector_name: str,created_by,) -> Inspection:
+    """
+    Génère une fiche d’inspection pour un véhicule.
+    La fiche est créée à partir de la version courante du modèle
+    correspondant au type d’inspection demandé.
+    Args:
+        vehicle: Véhicule à inspecter.
+        inspection_type: Type d’inspection à effectuer.
+        inspector_name: Nom de la personne qui réalisera l’inspection.
+        created_by: Utilisateur ayant généré la fiche.
+    Returns:
+        L’inspection créée et associée à la version courante du modèle.
+    Raises:
+        ValidationError: Si le type d’inspection est invalide.
+        InspectionContextVersion.DoesNotExist:
+            Si aucune version courante n’existe pour ce type d’inspection.
+    """
+    _validate_inspection_type(inspection_type)
+    raise NotImplementedError

@@ -8,8 +8,8 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionContextCriterionSerializer, InspectionContextSectionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionContextVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionContextVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionContextVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
@@ -122,9 +122,10 @@ class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     serializer_class = VehicleDocumentSerializer
     permission_classes=[VehiclePermission]
 
-class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionVersion.objects.filter(is_deleted=False)
-    serializer_class = InspectionVersionSerializer
+
+class InspectionContextVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = InspectionContextVersion.objects.filter(is_deleted=False)
+    serializer_class = InspectionContextVersionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
     def perform_create(self, serializer):
@@ -142,58 +143,75 @@ class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
             updated_by=self.request.user,
     )
 
+# InspectionSectionViewSet
+# Gère les sections directement rattachées à une version.
 
 class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionSection.objects.filter(is_deleted=False)
+    queryset = InspectionSection.objects.select_related("inspection_version").filter(is_deleted=False)
     serializer_class = InspectionSectionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
+
+
+# InspectionCriterionViewSet
+# Gère les critères directement rattachés à une section versionnée.
 class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionCriterion.objects.filter(is_deleted=False)
+    queryset = InspectionCriterion.objects.select_related("section","section__inspection_version",).filter(is_deleted=False)
     serializer_class = InspectionCriterionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
 
-class InspectionContextSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+# =============================================================================
+# InspectionViewSet
+#
+# Charge la version utilisée et les résultats avec leurs critères.
+# =============================================================================
+class InspectionViewSet(
+    AuditUserMixin,
+    SoftDeleteMixin,
+    ModelViewSet,
+):
     queryset = (
-        InspectionContextSection.objects
-        .select_related("section")
+        Inspection.objects
+        .select_related(
+            "vehicle",
+            "inspection_version",
+        )
+        .prefetch_related(
+            "criterion_results",
+            "criterion_results__criterion",
+            "criterion_results__criterion__section",
+            (
+                "criterion_results__criterion__section"
+                "__inspection_version"
+            ),
+        )
         .filter(is_deleted=False)
     )
-    serializer_class = InspectionContextSectionSerializer
-    permission_classes = [InspectionConfigurationPermission]
 
-
-class InspectionContextCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (InspectionContextCriterion.objects
-        .select_related("context_section","criterion").filter(is_deleted=False))
-    serializer_class = InspectionContextCriterionSerializer
-    permission_classes = [InspectionConfigurationPermission]
-
-class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (Inspection.objects
-    .select_related("vehicle")
-    .prefetch_related("criterion_results","criterion_results__context_criterion","criterion_results__context_criterion__criterion",)
-    .filter(is_deleted=False)
-)
     serializer_class = InspectionSerializer
     permission_classes = [InspectionPermission]
 
+
+
+# InspectionCriterionResultViewSet
+# Charge directement le critère, sa section et sa version.
 class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (
-        InspectionCriterionResult.objects.select_related("inspection","context_criterion","context_criterion__criterion",).filter(is_deleted=False)
-    )
+    queryset = InspectionCriterionResult.objects.select_related(
+            "inspection",
+            "inspection__inspection_version",
+            "criterion",
+            "criterion__section",
+            "criterion__section__inspection_version",
+        ).filter(is_deleted=False)
     serializer_class = InspectionCriterionResultSerializer
     permission_classes = [InspectionPermission]
 
 
 class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (
-    Defect.objects
-    .select_related("vehicle","source_inspection","source_inspection_criterion_result",)
-    .prefetch_related("corrective_actions","release_validations",)
-    .filter(is_deleted=False)
-)
+    queryset = Defect.objects .select_related("vehicle","source_inspection","source_inspection_criterion_result",
+    ).prefetch_related("corrective_actions","release_validations",
+    ).filter(is_deleted=False)
     serializer_class = DefectSerializer
 
 

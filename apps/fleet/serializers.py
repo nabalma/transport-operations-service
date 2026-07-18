@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionContextCriterion, InspectionContextSection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionContextVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -52,75 +52,73 @@ class VehicleDocumentSummarySerializer(serializers.ModelSerializer):
             "expires_at",
         ]
 
-# -- InspectionSectionSummary
+
+# =============================================================================
+# InspectionSectionSummarySerializer
+#
+# Représentation légère d’une section dans les réponses imbriquées.
+# =============================================================================
 class InspectionSectionSummarySerializer(serializers.ModelSerializer):
     class Meta:
         model = InspectionSection
-        fields = [
+        fields = (
+            "id",
+            "reference",
             "code",
             "title",
             "is_active",
-        ]
+        )
 
 
-
-# -- InspectionCriterionSummary
+# =============================================================================
+# InspectionCriterionSummarySerializer
+#
+# Représentation légère d’un critère appartenant à une section versionnée.
+# =============================================================================
 class InspectionCriterionSummarySerializer(serializers.ModelSerializer):
+    section = InspectionSectionSummarySerializer(
+        read_only=True,
+    )
+
     class Meta:
         model = InspectionCriterion
-        fields = [
+        fields = (
+            "id",
+            "section",
+            "reference",
             "code",
             "label",
             "scope",
+            "creates_defect_if_failed",
+            "is_blocking_if_failed",
             "is_active",
-        ]
+        )
 
 
-# -- InspectionContextSectionSummary
-class InspectionContextSectionSummarySerializer(serializers.ModelSerializer):
-    section = InspectionSectionSummarySerializer(read_only=True)
-
-    class Meta:
-        model = InspectionContextSection
-        fields = [
-            "context",
-            "reference",
-            "section",
-        ]  
-
-# -- InspectionContextCriterionSummary
-class InspectionContextCriterionSummarySerializer(serializers.ModelSerializer):
-    criterion = InspectionCriterionSummarySerializer(read_only=True,)
-
-    class Meta:
-        model = InspectionContextCriterion
-        fields = [
-            "reference",
-            "criterion",
-        ]
-
-# -- InspectionSummary
-class InspectionSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Inspection
-        fields = [
-            "context",
-            "overall_result",
-        ]
-
-
-# -- InspectionCriterionResultSummary
-class InspectionCriterionResultSummarySerializer(serializers.ModelSerializer):
-    context_criterion = InspectionContextCriterionSummarySerializer(
+# =============================================================================
+# InspectionCriterionResultSummarySerializer
+#
+# Représentation légère du résultat d’un critère dans une inspection.
+#
+# Le résultat pointe directement vers InspectionCriterion.
+# =============================================================================
+class InspectionCriterionResultSummarySerializer(
+    serializers.ModelSerializer
+):
+    criterion = InspectionCriterionSummarySerializer(
         read_only=True,
     )
 
     class Meta:
         model = InspectionCriterionResult
-        fields = [
-            "context_criterion",
+        fields = (
+            "id",
+            "criterion",
             "result",
-        ]
+            "comment",
+        )
+
+
 
 
 # -- DefectSummary
@@ -365,12 +363,17 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             "deleted_by",
         ]
 
-
-# -- InspectionVersionSerializer
-class InspectionVersionSerializer(serializers.ModelSerializer):
-
+# =============================================================================
+# InspectionContextVersionSerializer
+#
+# Gère une version complète d’un formulaire d’inspection.
+#
+# Après création, les champs context, version et source_version sont
+# immuables. Seul is_current peut être modifié.
+# =============================================================================
+class InspectionContextVersionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = InspectionVersion
+        model = InspectionContextVersion
         fields = (
             "id",
             "context",
@@ -391,24 +394,25 @@ class InspectionVersionSerializer(serializers.ModelSerializer):
             "updated_by",
         )
 
-
     def validate(self, attrs):
-        if self.instance is not None:
-            immutable_fields = (
+        if self.instance is None:
+            return attrs
+
+        immutable_fields = (
             "context",
             "version",
             "source_version",
         )
 
-            modified_fields = [
+        modified_fields = [
             field
             for field in immutable_fields
             if field in attrs
             and attrs[field] != getattr(self.instance, field)
         ]
 
-            if modified_fields:
-                raise serializers.ValidationError(
+        if modified_fields:
+            raise serializers.ValidationError(
                 {
                     field: "Ce champ ne peut pas être modifié."
                     for field in modified_fields
@@ -416,117 +420,176 @@ class InspectionVersionSerializer(serializers.ModelSerializer):
             )
 
         return attrs
- 
 
-        
-# -- InspectionSection
+
+# =============================================================================
+# InspectionSectionSerializer
+#
+# Gère les sections appartenant directement à une version d’inspection.
+# =============================================================================
 class InspectionSectionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InspectionSection
-        fields = "__all__"
+        fields = (
+            "id",
+            "inspection_version",
+            "reference",
+            "code",
+            "title",
+            "is_active",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
 
-        read_only_fields = [
+        read_only_fields = (
             "id",
             "created_at",
             "created_by",
             "updated_at",
             "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
+        )
 
 
-
-# -- InspectionCriterion
+# =============================================================================
+# InspectionCriterionSerializer
+#
+# Gère les critères appartenant directement à une section versionnée.
+# =============================================================================
 class InspectionCriterionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InspectionCriterion
-        fields = "__all__"
+        fields = (
+            "id",
+            "section",
+            "reference",
+            "code",
+            "label",
+            "scope",
+            "creates_defect_if_failed",
+            "is_blocking_if_failed",
+            "is_active",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
 
-        read_only_fields = [
+        read_only_fields = (
             "id",
             "created_at",
             "created_by",
             "updated_at",
             "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
-
- 
-# -- InspectionContextSection
-class InspectionContextSectionSerializer(serializers.ModelSerializer):
-
-    class Meta:
-        model = InspectionContextSection
-        fields = "__all__"
-
-        read_only_fields = [
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
+        )
 
 
-# -- InspectionContextCriterion
-class InspectionContextCriterionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = InspectionContextCriterion
-        fields = "__all__"
-
-        read_only_fields = [
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
-
-
-# -- Inspection
+# =============================================================================
+# InspectionSerializer
+#
+# Gère une inspection réelle et expose les résultats des critères
+# en lecture seule.
+# =============================================================================
 class InspectionSerializer(serializers.ModelSerializer):
-    criterion_results = InspectionCriterionResultSummarySerializer(many=True,read_only=True,)
+    criterion_results = InspectionCriterionResultSummarySerializer(
+        many=True,
+        read_only=True,
+    )
+
+    context = serializers.CharField(
+        source="inspection_version.context",
+        read_only=True,
+    )
+
     class Meta:
         model = Inspection
-        fields = "__all__"
-
-        read_only_fields = [
+        fields = (
             "id",
+            "vehicle",
+            "inspection_version",
+            "context",
+            "inspection_date",
+            "inspector_name",
+            "overall_result",
+            "comments",
+            "criterion_results",
             "created_at",
             "created_by",
             "updated_at",
             "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
+        )
 
-# -- InspectionCriterionResult
+        read_only_fields = (
+            "id",
+            "context",
+            "criterion_results",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+
+
+# =============================================================================
+# InspectionCriterionResultSerializer
+#
+# Gère le résultat d’un critère pour une inspection.
+#
+# Vérifie que le critère appartient à la même version que l’inspection.
+# =============================================================================
 class InspectionCriterionResultSerializer(serializers.ModelSerializer):
     class Meta:
         model = InspectionCriterionResult
-        fields = "__all__"
+        fields = (
+            "id",
+            "inspection",
+            "criterion",
+            "result",
+            "comment",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
 
-        read_only_fields = [
+        read_only_fields = (
             "id",
             "created_at",
             "created_by",
             "updated_at",
             "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
+        )
+
+    def validate(self, attrs):
+        inspection = attrs.get(
+            "inspection",
+            getattr(self.instance, "inspection", None),
+        )
+
+        criterion = attrs.get(
+            "criterion",
+            getattr(self.instance, "criterion", None),
+        )
+
+        if inspection is None or criterion is None:
+            return attrs
+
+        criterion_version_id = (
+            criterion.section.inspection_version_id
+        )
+
+        if criterion_version_id != inspection.inspection_version_id:
+            raise serializers.ValidationError(
+                {
+                    "criterion": (
+                        "Le critère n’appartient pas à la version "
+                        "utilisée par cette inspection."
+                    ),
+                }
+            )
+
+        return attrs
 
 # -- Defect
 class DefectSerializer(serializers.ModelSerializer):
