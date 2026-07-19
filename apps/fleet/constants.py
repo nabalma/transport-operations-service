@@ -125,6 +125,14 @@ class InspectionCriterionResultValue(models.TextChoices):
     PASS = "PASS", "Pass"
     FAIL = "FAIL", "Fail"
 
+# -------------------------------------------------------------------
+# InspectionLocationType
+# Type de lieu où l’inspection est effectuée.
+# -------------------------------------------------------------------
+class InspectionLocationType(models.TextChoices):
+    KNOWN = "KNOWN", "Lieu connu"
+    CUSTOM = "CUSTOM", "Lieu personnalisé"
+
 
 # -------------------------------------------------------------------
 # DefectSourceType

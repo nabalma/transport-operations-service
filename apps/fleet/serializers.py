@@ -1,3 +1,4 @@
+from apps.fleet.constants import InspectionContext, InspectionLocationType
 from rest_framework import serializers
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionContextVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
@@ -590,6 +591,30 @@ class InspectionCriterionResultSerializer(serializers.ModelSerializer):
             )
 
         return attrs
+    
+
+# -------------------------------------------------------------------
+# InspectionLocationInputSerializer
+# Données décrivant le lieu où l'inspection est effectuée.
+# -------------------------------------------------------------------
+class InspectionLocationInputSerializer(serializers.Serializer):
+    type = serializers.ChoiceField(choices=InspectionLocationType.choices,)
+    name = serializers.CharField(max_length=255,)
+
+
+
+# -------------------------------------------------------------------
+# GenerateInspectionSheetInputSerializer
+# Données requises pour générer une fiche d’inspection vierge.
+# -------------------------------------------------------------------
+class GenerateInspectionSheetInputSerializer(serializers.Serializer):
+    vehicle = serializers.PrimaryKeyRelatedField(queryset=Vehicle.objects.all(),)
+    inspection_type = serializers.ChoiceField(choices=InspectionContext.choices,)
+    inspection_date = serializers.DateField()
+    location = InspectionLocationInputSerializer()
+
+
+
 
 # -- Defect
 class DefectSerializer(serializers.ModelSerializer):
@@ -799,5 +824,3 @@ class EvidenceSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
-
-

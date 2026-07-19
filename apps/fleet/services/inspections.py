@@ -1,9 +1,17 @@
+from datetime import date
+
 from apps.fleet.constants import InspectionContext
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
+from django.db.models import Prefetch, QuerySet
+from io import BytesIO
+from reportlab.pdfgen import canvas
 
-from apps.fleet.models import Inspection, InspectionContextVersion, Vehicle
+from apps.fleet.models import Inspection, InspectionContextVersion, InspectionCriterion, InspectionSection, Vehicle
 
+# =======================================
+# ENREGISTRER UNE VERSION
+# =======================================
 
 INITIAL_VERSION = "0.0.0"
 
@@ -74,6 +82,11 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
         created_by=created_by,
     )
 
+
+# =======================================
+# METTRE A JOUR LE STATUS DUNE VERSION
+# =======================================
+
 def update_inspection_version_status(*,inspection_version: InspectionContextVersion,is_current: bool,updated_by,) -> InspectionContextVersion:
     """
     Met à jour uniquement le statut is_current d'une version d'inspection.
@@ -102,43 +115,85 @@ def update_inspection_version_status(*,inspection_version: InspectionContextVers
     return inspection_version 
 
 
-def _validate_inspection_type(inspection_type: str,) -> None:
-    """
-    Vérifie que le type d’inspection demandé est supporté.
-    Args:
-        inspection_type: Type d’inspection à valider.
-    Raises:
-        ValidationError: Si le type d’inspection est invalide.
-    """
-    valid_types = InspectionContext.values
 
-    if inspection_type not in valid_types:
+# =======================================
+# GENERER UNE FICHE DINSPECTION
+# =======================================
+
+
+# -------------------------------------------------------------------
+# _get_current_inspection_version
+# Retourne la version courante du formulaire pour un type d’inspection.
+# -------------------------------------------------------------------
+def _get_current_inspection_version(*,inspection_type: str,) -> InspectionContextVersion:
+    try:
+        return InspectionContextVersion.objects.get(
+            context=inspection_type,
+            is_current=True,
+            is_deleted=False,)
+
+    except InspectionContextVersion.DoesNotExist as exc:
         raise ValidationError(
             {
                 "inspection_type": (
-                    f"Type d’inspection invalide : {inspection_type}."
+                    "Aucune version courante n’existe pour ce type "
+                    "d’inspection."
+                )
+            }
+        ) from exc
+
+# -------------------------------------------------------------------
+# _validate_inspection_type
+# Vérifie que le type d’inspection demandé est autorisé.
+# -------------------------------------------------------------------
+def _validate_inspection_type(*,inspection_type: str,) -> None:
+    valid_values = {
+        choice.value
+        for choice in InspectionContext
+    }
+
+    if inspection_type not in valid_values:
+        raise ValidationError(
+            {
+                "inspection_type": (
+                    "Le type d’inspection fourni est invalide."
                 )
             }
         )
 
 
+def generate_inspection_sheet(*,vehicle: Vehicle,inspection_type: str,inspection_date: date,location_type: str,location_name: str,created_by,) -> bytes:
+    """
+    Génère une fiche d’inspection vierge pour un véhicule.
+    La fiche utilise la version courante du formulaire correspondantau type d’inspection demandé.
+    Cette fonction ne crée pas encore une Inspection en base de données. Elle prépare et retourne le contenu du document PDF.
 
-def generate_inspection_sheet(*,vehicle: Vehicle,inspection_type: InspectionContext,inspector_name: str,created_by,) -> Inspection:
-    """
-    Génère une fiche d’inspection pour un véhicule.
-    La fiche est créée à partir de la version courante du modèle
-    correspondant au type d’inspection demandé.
     Args:
-        vehicle: Véhicule à inspecter.
-        inspection_type: Type d’inspection à effectuer.
-        inspector_name: Nom de la personne qui réalisera l’inspection.
-        created_by: Utilisateur ayant généré la fiche.
+        vehicle:Véhicule concerné par la fiche.
+        inspection_type:Type d’inspection demandé, par exemple DAILY_CHECK.
+        inspection_date:Date prévue pour l’inspection.
+        location_type:Type du lieu d’inspection : KNOWN ou CUSTOM.
+        location_name:Nom du lieu où l’inspection sera effectuée.
+        created_by:Utilisateur ayant demandé la génération de la fiche.
+
     Returns:
-        L’inspection créée et associée à la version courante du modèle.
+        
     Raises:
-        ValidationError: Si le type d’inspection est invalide.
+        ValidationError:
+            Si les données métier sont invalides.
+
         InspectionContextVersion.DoesNotExist:
-            Si aucune version courante n’existe pour ce type d’inspection.
+            Si aucune version courante n’existe pour ce type
+            d’inspection.
     """
-    _validate_inspection_type(inspection_type)
-    raise NotImplementedError
+
+    _validate_inspection_type(inspection_type=inspection_type,)
+    inspection_version = _get_current_inspection_version(inspection_type=inspection_type,)
+    inspection_version=inspection_version,
+
+
+    return 
+  
+    
+
+ 
