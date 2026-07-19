@@ -120,80 +120,152 @@ def update_inspection_version_status(*,inspection_version: InspectionContextVers
 # GENERER UNE FICHE DINSPECTION
 # =======================================
 
+# _validate_inspection_context
+# Vérifie que le contexte d’inspection fourni est autorisé.
+# Lève une erreur de validation lorsque le contexte est absent ou invalide.
+def _validate_inspection_context(*,inspection_context: str | None,) -> None:
+    """
+    Valide le contexte utilisé pour générer la fiche d’inspection.
+    Lève une erreur lorsqu’aucun contexte ne correspond.
+    """
 
-# -------------------------------------------------------------------
-# _get_current_inspection_version
-# Retourne la version courante du formulaire pour un type d’inspection.
-# -------------------------------------------------------------------
-def _get_current_inspection_version(*,inspection_type: str,) -> InspectionContextVersion:
-    try:
-        return InspectionContextVersion.objects.get(
-            context=inspection_type,
-            is_current=True,
-            is_deleted=False,)
+    valid_contexts = {choice.value for choice in InspectionContext}
 
-    except InspectionContextVersion.DoesNotExist as exc:
+    if inspection_context not in valid_contexts:
         raise ValidationError(
             {
-                "inspection_type": (
-                    "Aucune version courante n’existe pour ce type "
-                    "d’inspection."
-                )
-            }
-        ) from exc
-
-# -------------------------------------------------------------------
-# _validate_inspection_type
-# Vérifie que le type d’inspection demandé est autorisé.
-# -------------------------------------------------------------------
-def _validate_inspection_type(*,inspection_type: str,) -> None:
-    valid_values = {
-        choice.value
-        for choice in InspectionContext
-    }
-
-    if inspection_type not in valid_values:
-        raise ValidationError(
-            {
-                "inspection_type": (
-                    "Le type d’inspection fourni est invalide."
+                "context": (
+                    "Le contexte d’inspection fourni est absent ou invalide."
                 )
             }
         )
 
 
-def generate_inspection_sheet(*,vehicle: Vehicle,inspection_type: str,inspection_date: date,location_type: str,location_name: str,created_by,) -> bytes:
+# _get_current_inspection_version
+# Recherche la version courante du formulaire pour le contexte demandé.
+# Les versions supprimées sont automatiquement exclues.
+def _get_current_inspection_version(*,inspection_context: str,) -> InspectionContextVersion:
     """
-    Génère une fiche d’inspection vierge pour un véhicule.
-    La fiche utilise la version courante du formulaire correspondantau type d’inspection demandé.
-    Cette fonction ne crée pas encore une Inspection en base de données. Elle prépare et retourne le contenu du document PDF.
-
-    Args:
-        vehicle:Véhicule concerné par la fiche.
-        inspection_type:Type d’inspection demandé, par exemple DAILY_CHECK.
-        inspection_date:Date prévue pour l’inspection.
-        location_type:Type du lieu d’inspection : KNOWN ou CUSTOM.
-        location_name:Nom du lieu où l’inspection sera effectuée.
-        created_by:Utilisateur ayant demandé la génération de la fiche.
-
-    Returns:
-        
-    Raises:
-        ValidationError:
-            Si les données métier sont invalides.
-
-        InspectionContextVersion.DoesNotExist:
-            Si aucune version courante n’existe pour ce type
-            d’inspection.
+    Retourne la version courante d’un contexte d’inspection.
+    Lève une erreur lorsqu’aucune version courante n’est disponible.
     """
 
-    _validate_inspection_type(inspection_type=inspection_type,)
-    inspection_version = _get_current_inspection_version(inspection_type=inspection_type,)
-    inspection_version=inspection_version,
+    inspection_version = (
+        InspectionContextVersion.objects
+        .filter(
+            context=inspection_context,
+            is_current=True,
+            is_deleted=False,
+        )
+        .order_by("-created_at")
+        .first()
+    )
+
+    if inspection_version is None:
+        raise ValidationError(
+            {
+                "context": (
+                    "Aucune version courante n’existe pour ce contexte "
+                    "d’inspection."
+                )
+            }
+        )
+
+    return inspection_version
+
+# build_inspection_header
+# Construit les informations d’en-tête de la fiche d’inspection.
+# Les données absentes sont retournées avec la valeur None.
+def build_inspection_header(
+    *,
+    vehicle: Vehicle | None = None,
+    inspection_date: date | None = None,
+    location_name: str | None = None,
+    driver_name: str | None = None,
+    inspector_name: str | None = None,
+) -> dict:
+    """
+    Construit les données d’en-tête d’une fiche d’inspection.
+
+    Cette fonction ne crée ni ne modifie aucune donnée en base.
+    """
+
+    return {
+        "location_name": location_name,
+        "vehicle_registration": (
+            vehicle.display_registration
+            if vehicle
+            else None
+        ),
+        "driver_name": driver_name,
+        "carrier_name": (
+            vehicle.carrier.name
+            if vehicle
+            else None
+        ),
+        "inspection_date": inspection_date,
+        "inspector_name": inspector_name,
+    }
+
+# build_inspection_sections
+# Construit les sections liées à la version d’inspection sélectionnée.
+# Les critères ne sont pas encore inclus à cette étape.
+def build_inspection_sections(*,inspection_version: InspectionContextVersion,) -> list[dict]:
+    """
+    Construit la liste des sections de la fiche d’inspection.
+    Les sections supprimées sont exclues du résultat.
+    """
+
+    sections = inspection_version.sections.filter(is_deleted=False,).order_by("reference")
+
+    return [
+        {
+          #  "id": str(section.id),
+            "reference": section.reference,
+          #  "code": section.code,
+            "title": section.title,
+        }
+        for section in sections
+    ]
 
 
-    return 
-  
-    
+# build_blank_inspection_sheet
+# Construit une fiche d’inspection vierge à partir d’une version donnée.
+# Les informations d’en-tête peuvent être fournies ou laissées vides.
+def build_blank_inspection_sheet(
+    *,
+    inspection_context: str | None,
+    vehicle: Vehicle | None = None,
+    inspection_date: date | None = None,
+    location_name: str | None = None,
+    driver_name: str | None = None,
+    inspector_name: str | None = None,
+) -> dict:
+    """
+    Construit les données d’une fiche d’inspection vierge.
+    Cette fonction orchestre la validation, la recherche de la version
+    courante et la construction de l’en-tête.
+    """
+
+    _validate_inspection_context(inspection_context=inspection_context,)
+
+    inspection_version = _get_current_inspection_version(inspection_context=inspection_context,)
+
+    header = build_inspection_header(
+        vehicle=vehicle,
+        inspection_date=inspection_date,
+        location_name=location_name,
+        driver_name=driver_name,
+        inspector_name=inspector_name,
+    )
+    sections = build_inspection_sections(inspection_version=inspection_version,)
+
+    return {
+        "inspection_version": str(inspection_version.id),
+        "inspection_context": inspection_version.context,
+        "version": inspection_version.version,
+        "header": header,
+        "sections": sections,
+    }
 
  

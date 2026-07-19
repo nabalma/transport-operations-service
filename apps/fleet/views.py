@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import create_inspection_version, update_inspection_version_status
+from apps.fleet.services.inspections import build_blank_inspection_sheet, create_inspection_version, update_inspection_version_status
 from apps.fleet.services.membership_requests import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -142,6 +142,7 @@ class InspectionContextVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSe
             is_current=serializer.validated_data["is_current"],
             updated_by=self.request.user,
     )
+        
 
 # InspectionSectionViewSet
 # Gère les sections directement rattachées à une version.
@@ -166,14 +167,8 @@ class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 #
 # Charge la version utilisée et les résultats avec leurs critères.
 # =============================================================================
-class InspectionViewSet(
-    AuditUserMixin,
-    SoftDeleteMixin,
-    ModelViewSet,
-):
-    queryset = (
-        Inspection.objects
-        .select_related(
+class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = (Inspection.objects.select_related(
             "vehicle",
             "inspection_version",
         )
@@ -191,6 +186,20 @@ class InspectionViewSet(
 
     serializer_class = InspectionSerializer
     permission_classes = [InspectionPermission]
+
+    # blank_sheet
+    # Retourne une fiche vierge pour le contexte d’inspection demandé.
+    # La version courante est automatiquement sélectionnée par le service.
+    @action(detail=False,methods=["get"],url_path="blank-sheet",)
+    def blank_sheet(self, request):
+        """
+        Construit et retourne une fiche d’inspection vierge.
+        Le contexte est lu depuis les paramètres de l’URL.
+        """
+        inspection_context=request.query_params.get("context")
+        sheet = build_blank_inspection_sheet(inspection_context=inspection_context,)
+
+        return Response(sheet,status=status.HTTP_200_OK,)
 
 
 
@@ -296,3 +305,7 @@ class NextTripEligibilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
 class EvidenceViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = Evidence.objects.filter(is_deleted=False)
     serializer_class = EvidenceSerializer
+
+
+
+
