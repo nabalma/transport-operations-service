@@ -347,6 +347,42 @@ class InspectionVersion(TimeStampedSoftDeletableModel):
         return f"{self.get_context_display()} - {self.version}"
 
 
+# InspectionChapter
+# Représente un chapitre d’une version d’inspection.
+# Exemple : I — Standards minimums.
+class InspectionChapter(TimeStampedSoftDeletableModel):
+    """
+    Représente un chapitre d'une version de formulaire d'inspection.
+    Exemple :
+        I - Standards minimums
+        II - Exigences supplémentaires
+    """
+
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
+    inspection_version = models.ForeignKey(InspectionVersion,on_delete=models.CASCADE,related_name="chapters",)
+    reference = models.CharField(max_length=10,help_text="Référence du chapitre (I, II, III...).",)
+    code = models.CharField(max_length=100,help_text="Code technique unique dans une version.",)
+    title = models.CharField(max_length=255,help_text="Titre affiché sur la fiche d'inspection.",)
+    is_active = models.BooleanField(default=True,help_text="Indique si le chapitre est disponible dans cette version.",)
+
+    class Meta:
+        ordering = [
+            "reference",
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["inspection_version", "reference"],
+                name="inspection_chapter_reference_per_version_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["inspection_version", "code"],
+                name="inspection_chapter_code_per_version_unique",
+            ),
+        ]
+
+    def __str__(self) -> str:
+        return f"{self.reference} - {self.title}"
+
 # =============================================================================
 # InspectionSection
 #
@@ -375,12 +411,7 @@ class InspectionVersion(TimeStampedSoftDeletableModel):
 class InspectionSection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    inspection_version = models.ForeignKey(
-    InspectionVersion,
-    on_delete=models.CASCADE,
-    related_name="sections",
-)
-
+    chapter = models.ForeignKey(InspectionChapter,on_delete=models.CASCADE,related_name="sections",)
     reference = models.CharField(max_length=20,)
     code = models.CharField(max_length=100,)
     title = models.CharField(max_length=255,)
@@ -388,15 +419,15 @@ class InspectionSection(TimeStampedSoftDeletableModel):
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["inspection_version", "reference"],
-                name="unique_section_reference_per_inspection_version",
-            ),
-            models.UniqueConstraint(
-                fields=["inspection_version", "code"],
-                name="unique_section_code_per_inspection_version",
-            ),
-        ]
+        models.UniqueConstraint(
+            fields=["chapter", "reference"],
+            name="inspection_section_reference_per_chapter_unique",
+        ),
+        models.UniqueConstraint(
+            fields=["chapter", "code"],
+            name="inspection_section_code_per_chapter_unique",
+        ),
+    ]
 
         ordering = [
             "reference",

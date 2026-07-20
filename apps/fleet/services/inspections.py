@@ -7,7 +7,7 @@ from django.db.models import Prefetch, QuerySet
 from io import BytesIO
 from reportlab.pdfgen import canvas
 
-from apps.fleet.models import Inspection, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
+from apps.fleet.models import Inspection, InspectionChapter, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
 
 # =======================================
 # ENREGISTRER UNE VERSION
@@ -207,28 +207,58 @@ def build_inspection_header(
         "inspector_name": inspector_name,
     }
 
-# build_inspection_sections
-# Construit les sections liées à la version d’inspection sélectionnée.
-# Chaque section contient uniquement ses critères actifs.
-def build_inspection_sections(
+
+# build_inspection_chapters
+# Construit les chapitres liés à la version d’inspection sélectionnée.
+# Chaque chapitre contient uniquement ses sections actives.
+def build_inspection_chapters(
     *,
     inspection_version: InspectionVersion,
 ) -> list[dict]:
     """
-    Construit les sections de la fiche d’inspection vierge.
+    Construit les chapitres de la fiche d'inspection vierge.
 
-    Les sections supprimées sont exclues du résultat.
+    Les chapitres supprimés ou inactifs sont exclus du résultat.
     """
 
-    sections = inspection_version.sections.filter(
+    chapters = inspection_version.chapters.filter(
         is_deleted=False,
+        is_active=True,
     ).order_by("reference")
 
     return [
         {
-          #  "id": str(section.id),
+            "reference": chapter.reference,
+            "title": chapter.title,
+            "sections": build_inspection_sections(
+                chapter=chapter,
+            ),
+        }
+        for chapter in chapters
+    ]
+
+
+
+# build_inspection_sections
+# Construit les sections liées à un chapitre d’inspection.
+# Chaque section contient uniquement ses critères actifs.
+def build_inspection_sections(
+    *,
+    chapter: InspectionChapter,
+) -> list[dict]:
+    """
+    Construit les sections actives d’un chapitre d’inspection.
+    Les sections supprimées ou inactives sont exclues du résultat.
+    """
+
+    sections = chapter.sections.filter(
+        is_deleted=False,
+        is_active=True,
+    ).order_by("reference")
+
+    return [
+        {
             "reference": section.reference,
-          #  "code": section.code,
             "title": section.title,
             "criterias": build_section_criteria(
                 section=section,
@@ -236,7 +266,6 @@ def build_inspection_sections(
         }
         for section in sections
     ]
-
 
 # build_section_criteria
 # Construit les critères actifs liés à une section d’inspection.
@@ -274,7 +303,7 @@ def build_blank_inspection_sheet(
     """
     Construit les données d’une fiche d’inspection vierge.
     Cette fonction orchestre la validation, la recherche de la version
-    courante et la construction de l’en-tête.
+    courante et la construction de l’en-tête et les chapitres.
     """
 
     _validate_inspection_context(inspection_context=inspection_context,)
@@ -288,15 +317,14 @@ def build_blank_inspection_sheet(
         driver_name=driver_name,
         inspector_name=inspector_name,
     )
-    sections = build_inspection_sections(inspection_version=inspection_version,)
-
+    chapters = build_inspection_chapters(inspection_version=inspection_version,)
 
     return {
         "inspection_version": str(inspection_version.id),
         "inspection_context": inspection_version.context,
         "version": inspection_version.version,
         "header": header,
-        "sections": sections,
+        "chapters": chapters,
         
        
     }
