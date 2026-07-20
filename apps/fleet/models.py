@@ -435,7 +435,7 @@ class InspectionSection(TimeStampedSoftDeletableModel):
 
     def __str__(self):
         return (
-            f"{self.inspection_version} - "
+            f"{self.chapter} - "
             f"{self.reference} {self.title}"
         )
 

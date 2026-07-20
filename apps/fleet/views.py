@@ -167,7 +167,7 @@ class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 # InspectionCriterionViewSet
 # Gère les critères directement rattachés à une section versionnée.
 class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionCriterion.objects.select_related("section","section__inspection_version",).filter(is_deleted=False)
+    queryset = InspectionCriterion.objects.select_related("section","section__chapter",).filter(is_deleted=False)
     serializer_class = InspectionCriterionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
