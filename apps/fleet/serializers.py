@@ -1,7 +1,7 @@
 from apps.fleet.constants import InspectionContext, InspectionLocationType
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionContextVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -374,7 +374,7 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
 # =============================================================================
 class InspectionContextVersionSerializer(serializers.ModelSerializer):
     class Meta:
-        model = InspectionContextVersion
+        model = InspectionVersion
         fields = (
             "id",
             "context",

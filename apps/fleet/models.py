@@ -313,7 +313,7 @@ class VehicleDocument(TimeStampedSoftDeletableModel):
 # Une ancienne version ne doit pas être modifiée lorsque l’utilisateur
 # modifie une nouvelle version.
 # =============================================================================
-class InspectionContextVersion(TimeStampedSoftDeletableModel):
+class InspectionVersion(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
     context = models.CharField(max_length=30,choices=InspectionContext.choices,)
@@ -376,7 +376,7 @@ class InspectionSection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
     inspection_version = models.ForeignKey(
-    InspectionContextVersion,
+    InspectionVersion,
     on_delete=models.CASCADE,
     related_name="sections",
 )
@@ -434,11 +434,7 @@ class InspectionSection(TimeStampedSoftDeletableModel):
 class InspectionCriterion(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
 
-    section = models.ForeignKey(
-    InspectionSection,
-    on_delete=models.CASCADE,
-    related_name="criteria",
-)
+    section = models.ForeignKey(InspectionSection,on_delete=models.CASCADE,related_name="criteria",)
 
     reference = models.CharField(max_length=20,)
     code = models.CharField(max_length=100,)
@@ -493,7 +489,7 @@ class Inspection(TimeStampedSoftDeletableModel):
     vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name="inspections",)
 
     inspection_version = models.ForeignKey(
-    InspectionContextVersion,
+    InspectionVersion,
     on_delete=models.PROTECT,
     related_name="inspections",
 )

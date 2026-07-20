@@ -8,7 +8,7 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionContextVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionContextVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionContextVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
@@ -123,8 +123,8 @@ class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     permission_classes=[VehiclePermission]
 
 
-class InspectionContextVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionContextVersion.objects.filter(is_deleted=False)
+class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = InspectionVersion.objects.filter(is_deleted=False)
     serializer_class = InspectionContextVersionSerializer
     permission_classes = [InspectionConfigurationPermission]
 

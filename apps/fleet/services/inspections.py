@@ -7,7 +7,7 @@ from django.db.models import Prefetch, QuerySet
 from io import BytesIO
 from reportlab.pdfgen import canvas
 
-from apps.fleet.models import Inspection, InspectionContextVersion, InspectionCriterion, InspectionSection, Vehicle
+from apps.fleet.models import Inspection, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
 
 # =======================================
 # ENREGISTRER UNE VERSION
@@ -21,7 +21,7 @@ INITIAL_VERSION = "0.0.0"
 #    - toute autre version doit avoir une source_version ;
 #    - la source_version doit appartenir au même contexte.
 @transaction.atomic
-def create_inspection_version(*,context: str,version: str,source_version: InspectionContextVersion | None, is_current: bool,created_by,) -> InspectionContextVersion:
+def create_inspection_version(*,context: str,version: str,source_version: InspectionVersion | None, is_current: bool,created_by,) -> InspectionVersion:
     """
     Crée une nouvelle version d'inspection.
     Règles métier :
@@ -32,14 +32,14 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
     Retourne :
         L'instance InspectionVersion créée.
     """
-    if version == INITIAL_VERSION and source_version is not None:
-        raise ValidationError(
+    if version == INITIAL_VERSION :
+        if source_version is not None:
+            raise ValidationError(
             {
                 "source_version": (
                     "La version 0.0.0 ne peut pas avoir de version source."
                 )
-            }
-        )
+            })
     else :
 
         if source_version is None:
@@ -65,7 +65,7 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
         # Si cette version devient la version courante,
     # on retire ce statut aux autres versions du même contexte.
     if is_current:
-        InspectionContextVersion.objects.filter(
+        InspectionVersion.objects.filter(
             context=context,
             is_current=True,
             ).update(
@@ -74,7 +74,7 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
         )
 
     # Création de la nouvelle version
-    return InspectionContextVersion.objects.create(
+    return InspectionVersion.objects.create(
         context=context,
         version=version,
         source_version=source_version,
@@ -87,7 +87,7 @@ def create_inspection_version(*,context: str,version: str,source_version: Inspec
 # METTRE A JOUR LE STATUS DUNE VERSION
 # =======================================
 
-def update_inspection_version_status(*,inspection_version: InspectionContextVersion,is_current: bool,updated_by,) -> InspectionContextVersion:
+def update_inspection_version_status(*,inspection_version: InspectionVersion,is_current: bool,updated_by,) -> InspectionVersion:
     """
     Met à jour uniquement le statut is_current d'une version d'inspection.
     Les champs context, version et source_version restent immuables.
@@ -144,14 +144,14 @@ def _validate_inspection_context(*,inspection_context: str | None,) -> None:
 # _get_current_inspection_version
 # Recherche la version courante du formulaire pour le contexte demandé.
 # Les versions supprimées sont automatiquement exclues.
-def _get_current_inspection_version(*,inspection_context: str,) -> InspectionContextVersion:
+def _get_current_inspection_version(*,inspection_context: str,) -> InspectionVersion:
     """
     Retourne la version courante d’un contexte d’inspection.
     Lève une erreur lorsqu’aucune version courante n’est disponible.
     """
 
     inspection_version = (
-        InspectionContextVersion.objects
+        InspectionVersion.objects
         .filter(
             context=inspection_context,
             is_current=True,
@@ -209,14 +209,20 @@ def build_inspection_header(
 
 # build_inspection_sections
 # Construit les sections liées à la version d’inspection sélectionnée.
-# Les critères ne sont pas encore inclus à cette étape.
-def build_inspection_sections(*,inspection_version: InspectionContextVersion,) -> list[dict]:
+# Chaque section contient uniquement ses critères actifs.
+def build_inspection_sections(
+    *,
+    inspection_version: InspectionVersion,
+) -> list[dict]:
     """
-    Construit la liste des sections de la fiche d’inspection.
+    Construit les sections de la fiche d’inspection vierge.
+
     Les sections supprimées sont exclues du résultat.
     """
 
-    sections = inspection_version.sections.filter(is_deleted=False,).order_by("reference")
+    sections = inspection_version.sections.filter(
+        is_deleted=False,
+    ).order_by("reference")
 
     return [
         {
@@ -224,9 +230,33 @@ def build_inspection_sections(*,inspection_version: InspectionContextVersion,) -
             "reference": section.reference,
           #  "code": section.code,
             "title": section.title,
+            "criterias": build_section_criteria(
+                section=section,
+            ),
         }
         for section in sections
     ]
+
+
+# build_section_criteria
+# Construit les critères actifs liés à une section d’inspection.
+# Les critères supprimés ou inactifs sont exclus du résultat.
+def build_section_criteria(*,section: InspectionSection,) -> list[dict]:
+    """
+    Construit les critères actifs d’une section d’inspection.
+    Les résultats restent vides pour une fiche d’inspection vierge.
+    """
+
+    criteria = section.criteria.filter(is_deleted=False,is_active=True,).order_by("reference")
+
+    return [
+        {
+          "reference": criterion.reference,
+            "label": criterion.label,
+        }
+        for criterion in criteria
+    ]
+
 
 
 # build_blank_inspection_sheet
@@ -260,12 +290,15 @@ def build_blank_inspection_sheet(
     )
     sections = build_inspection_sections(inspection_version=inspection_version,)
 
+
     return {
         "inspection_version": str(inspection_version.id),
         "inspection_context": inspection_version.context,
         "version": inspection_version.version,
         "header": header,
         "sections": sections,
+        
+       
     }
 
  
