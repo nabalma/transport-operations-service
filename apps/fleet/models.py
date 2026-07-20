@@ -470,7 +470,7 @@ class InspectionCriterion(TimeStampedSoftDeletableModel):
     reference = models.CharField(max_length=20,)
     code = models.CharField(max_length=100,)
     label = models.TextField()
-    scope = models.CharField(max_length=20,choices=VehicleScope.choices,)
+
     creates_defect_if_failed = models.BooleanField(default=False,)
     is_blocking_if_failed = models.BooleanField(default=False,)
     is_active = models.BooleanField(default=True,)

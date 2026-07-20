@@ -1,6 +1,6 @@
 from django.contrib import admin
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionChapter,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership
 
 # Register your models here.
 admin.site.register(Carrier)
@@ -9,6 +9,7 @@ admin.site.register(TankerCompartment)
 admin.site.register(VehicleMembership)
 admin.site.register(VehicleDocument)
 admin.site.register(InspectionVersion)
+admin.site.register(InspectionChapter)
 admin.site.register(InspectionCriterion)
 admin.site.register(Inspection)
 admin.site.register(InspectionCriterionResult)

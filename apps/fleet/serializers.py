@@ -1,7 +1,7 @@
 from apps.fleet.constants import InspectionContext, InspectionLocationType
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionChapter,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -89,7 +89,6 @@ class InspectionCriterionSummarySerializer(serializers.ModelSerializer):
             "reference",
             "code",
             "label",
-            "scope",
             "creates_defect_if_failed",
             "is_blocking_if_failed",
             "is_active",
@@ -372,7 +371,7 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
 # Après création, les champs context, version et source_version sont
 # immuables. Seul is_current peut être modifié.
 # =============================================================================
-class InspectionContextVersionSerializer(serializers.ModelSerializer):
+class InspectionVersionSerializer(serializers.ModelSerializer):
     class Meta:
         model = InspectionVersion
         fields = (
@@ -423,6 +422,29 @@ class InspectionContextVersionSerializer(serializers.ModelSerializer):
         return attrs
 
 
+# InspectionChapterSerializer
+# Sérialise les chapitres d’une version d’inspection.
+# Expose les champs nécessaires à leur gestion via l’API.
+class InspectionChapterSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = InspectionChapter
+        fields = (
+            "id",
+            "inspection_version",
+            "reference",
+            "code",
+            "title",
+            "is_active",
+            "created_at",
+            "updated_at",
+        )
+        read_only_fields = (
+            "id",
+            "created_at",
+            "updated_at",
+        )
+
+
 # =============================================================================
 # InspectionSectionSerializer
 #
@@ -433,7 +455,7 @@ class InspectionSectionSerializer(serializers.ModelSerializer):
         model = InspectionSection
         fields = (
             "id",
-            "inspection_version",
+            "chapter",
             "reference",
             "code",
             "title",
@@ -467,7 +489,6 @@ class InspectionCriterionSerializer(serializers.ModelSerializer):
             "reference",
             "code",
             "label",
-            "scope",
             "creates_defect_if_failed",
             "is_blocking_if_failed",
             "is_active",

@@ -8,8 +8,8 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionContextVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionContextVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
@@ -125,7 +125,7 @@ class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 
 class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = InspectionVersion.objects.filter(is_deleted=False)
-    serializer_class = InspectionContextVersionSerializer
+    serializer_class = InspectionVersionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
     def perform_create(self, serializer):
@@ -144,11 +144,21 @@ class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     )
         
 
+# InspectionChapterViewSet
+# Gère les opérations CRUD sur les chapitres d’inspection.
+# Exclut les chapitres supprimés.
+class InspectionChapterViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = InspectionChapter.objects.select_related("inspection_version",).filter(is_deleted=False,)
+    serializer_class = InspectionChapterSerializer
+    permission_classes = [InspectionConfigurationPermission]
+
+
+
+
 # InspectionSectionViewSet
 # Gère les sections directement rattachées à une version.
-
 class InspectionSectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = InspectionSection.objects.select_related("inspection_version").filter(is_deleted=False)
+    queryset = InspectionSection.objects.select_related("chapter").filter(is_deleted=False)
     serializer_class = InspectionSectionSerializer
     permission_classes = [InspectionConfigurationPermission]
 
