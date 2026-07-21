@@ -1,6 +1,6 @@
 from datetime import date
 
-from apps.fleet.constants import InspectionContext, InspectionStatus
+from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionStatus
 from apps.fleet.services.membership import _ensure_vehicle_has_active_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
@@ -489,10 +489,7 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
 
 # _get_inspection_criterion_or_error
 # Retrieves an active inspection criterion by its identifier.
-def _get_inspection_criterion_or_error(
-    *,
-    criterion_id,
-) -> InspectionCriterion:
+def _get_inspection_criterion_or_error(*,criterion_id,) -> InspectionCriterion:
     """
     Return an active inspection criterion.
     """
@@ -528,7 +525,7 @@ def _get_active_criteria_prefetch() -> Prefetch:
             is_deleted=False,
             is_active=True,
         ).order_by(
-            "reference",
+            "position",
         ),
     )
 
@@ -551,7 +548,7 @@ def _get_active_sections_prefetch() -> Prefetch:
                 _get_active_criteria_prefetch(),
             )
             .order_by(
-                "reference",
+                "position",
             )
         ),
     )
@@ -575,7 +572,7 @@ def _get_active_chapters_prefetch() -> Prefetch:
                 _get_active_sections_prefetch(),
             )
             .order_by(
-                "reference",
+                "position",
             )
         ),
     )
@@ -602,3 +599,140 @@ def get_inspection_version_tree(
         )
     )
 
+
+
+# get_expected_inspection_criteria
+# Returns all active criteria expected for an inspection.
+def get_expected_inspection_criteria(*,inspection: Inspection,) -> QuerySet[InspectionCriterion]:
+    """
+    Return active criteria belonging to the inspection version.
+    """
+    return InspectionCriterion.objects.filter(
+        section__chapter__inspection_version=inspection.inspection_version,
+        is_deleted=False,
+        is_active=True,
+        section__is_deleted=False,
+        section__is_active=True,
+        section__chapter__is_deleted=False,
+        section__chapter__is_active=True,
+    )
+
+# get_recorded_criterion_results_count
+# Returns the number of active criterion results recorded for an inspection.
+def get_recorded_criterion_results_count(*,inspection: Inspection,) -> int:
+    """
+    Return the number of active criterion results for an inspection.
+    """
+    return InspectionCriterionResult.objects.filter(
+        inspection=inspection,
+        is_deleted=False,
+    ).count()
+
+
+# _ensure_all_expected_criteria_are_recorded
+# Ensures that every expected criterion has an active recorded result.
+def _ensure_all_expected_criteria_are_recorded(*,inspection: Inspection,) -> None:
+    """
+    Validate that all expected criteria have been recorded.
+    """
+    expected_count = get_expected_inspection_criteria(inspection=inspection,).count()
+    recorded_count = get_recorded_criterion_results_count(inspection=inspection,)
+
+    if expected_count != recorded_count:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "All expected criteria must be recorded "
+                    "before completing the inspection."
+                )
+            }
+        )
+    
+
+# calculate_inspection_overall_result
+# Calculates the overall result from active criterion results.
+# A failed blocking criterion always forces a FAIL result.
+def calculate_inspection_overall_result(*,inspection: Inspection,) -> str:
+    """
+    Calculate the overall result of an inspection.
+    """
+    PASS_THRESHOLD = 95
+    PASS_WITH_OBSERVATION_THRESHOLD = 80
+
+    criterion_results = (
+        InspectionCriterionResult.objects
+        .filter(
+            inspection=inspection,
+            is_deleted=False,
+        )
+        .select_related(
+            "criterion",
+        )
+    )
+
+    has_blocking_failure = criterion_results.filter(
+        result=InspectionCriterionResultValue.FAIL,
+        criterion__is_blocking_if_failed=True,
+    ).exists()
+
+    if has_blocking_failure:
+        return InspectionOverallResult.FAIL
+
+    applicable_results = criterion_results.exclude(result=InspectionCriterionResultValue.NOT_APPLICABLE,)
+    possible_points = applicable_results.count()
+    earned_points = applicable_results.filter(result=InspectionCriterionResultValue.PASS,).count()
+
+    score_percentage = (earned_points / possible_points) * 100
+
+    if score_percentage >= PASS_THRESHOLD:
+        return InspectionOverallResult.PASS
+
+    if score_percentage >= PASS_WITH_OBSERVATION_THRESHOLD:
+        return InspectionOverallResult.PASS_WITH_OBSERVATION
+
+    return InspectionOverallResult.FAIL
+
+
+
+# complete_inspection
+# Completes an inspection after validating business rules.
+@transaction.atomic
+def complete_inspection(*,inspection: Inspection,user,) -> Inspection:
+    """
+    Complete an inspection.
+    """
+    if inspection.is_deleted:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "A deleted inspection cannot be completed."
+                )
+            }
+        )
+
+    if inspection.status != InspectionStatus.IN_PROGRESS:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "Only an inspection in progress can be completed."
+                )
+            }
+        )
+    _ensure_all_expected_criteria_are_recorded(inspection=inspection,)
+    overall_result = calculate_inspection_overall_result(inspection=inspection,)
+    inspection.overall_result = overall_result
+    inspection.status = InspectionStatus.COMPLETED
+    inspection.updated_by = user
+
+    inspection.save(
+    update_fields=[
+        "overall_result",
+        "status",
+        "updated_by",
+        "updated_at",
+    ]
+)
+
+
+
+    return inspection

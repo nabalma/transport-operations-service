@@ -430,6 +430,7 @@ class InspectionChapterSerializer(serializers.ModelSerializer):
         model = InspectionChapter
         fields = (
             "id",
+            "position",
             "inspection_version",
             "reference",
             "code",
@@ -455,6 +456,7 @@ class InspectionSectionSerializer(serializers.ModelSerializer):
         model = InspectionSection
         fields = (
             "id",
+            "position",
             "chapter",
             "reference",
             "code",
@@ -487,6 +489,7 @@ class InspectionCriterionSerializer(serializers.ModelSerializer):
             "id",
             "section",
             "reference",
+            "position",
             "code",
             "label",
             "creates_defect_if_failed",
@@ -521,7 +524,7 @@ class RecordCriterionResultInputSerializer(serializers.Serializer):
         allow_null=True,
     )
 
-    
+
 # =============================================================================
 # InspectionSerializer
 #
@@ -625,7 +628,7 @@ class InspectionCriterionResultSerializer(serializers.ModelSerializer):
             return attrs
 
         criterion_version_id = (
-            criterion.section.inspection_version_id
+            criterion.section.chapter.inspection_version_id
         )
 
         if criterion_version_id != inspection.inspection_version_id:

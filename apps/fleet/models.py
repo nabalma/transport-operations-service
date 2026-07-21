@@ -537,7 +537,7 @@ class Inspection(TimeStampedSoftDeletableModel):
     inspector = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name="inspections",)
     status = models.CharField(max_length=20,choices=InspectionStatus.choices,default=InspectionStatus.IN_PROGRESS,)
 
-    overall_result = models.CharField(max_length=30,choices=InspectionOverallResult.choices,)
+    overall_result = models.CharField(max_length=30,choices=InspectionOverallResult.choices,null=True,blank=True,default=None,)
     comments = models.TextField(blank=True,)
 
     @property

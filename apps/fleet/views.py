@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import _get_inspection_criterion_or_error, build_blank_inspection_sheet, cancel_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
+from apps.fleet.services.inspections import _get_inspection_criterion_or_error, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from apps.fleet.services.vehicles import _get_vehicle_or_error
 from rest_framework.viewsets import ModelViewSet
@@ -270,6 +270,18 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         output_serializer = InspectionCriterionResultSerializer(criterion_result,)
         return Response(output_serializer.data,status=status.HTTP_201_CREATED,)
 
+    # complete
+# Completes an inspection after validating all business rules.
+    @action(detail=True,methods=["post"],url_path="complete",)
+    def complete(self,request,pk=None,):
+        """
+        Complete an inspection and return the updated inspection.
+        """
+        inspection = self.get_object()
+        inspection = complete_inspection(inspection=inspection,user=request.user,)
+        serializer = self.get_serializer(inspection,)
+
+        return Response(serializer.data,status=status.HTTP_200_OK,)
 
 
 
