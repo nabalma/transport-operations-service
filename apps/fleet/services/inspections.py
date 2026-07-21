@@ -214,20 +214,14 @@ def build_inspection_header(
 # build_inspection_chapters
 # Construit les chapitres liés à la version d’inspection sélectionnée.
 # Chaque chapitre contient uniquement ses sections actives.
-def build_inspection_chapters(
-    *,
-    inspection_version: InspectionVersion,
-) -> list[dict]:
+def build_inspection_chapters(*,inspection_version: InspectionVersion,) -> list[dict]:
     """
     Construit les chapitres de la fiche d'inspection vierge.
 
     Les chapitres supprimés ou inactifs sont exclus du résultat.
     """
 
-    chapters = inspection_version.chapters.filter(
-        is_deleted=False,
-        is_active=True,
-    ).order_by("reference")
+    chapters = inspection_version.chapters.all()
 
     return [
         {
@@ -245,19 +239,13 @@ def build_inspection_chapters(
 # build_inspection_sections
 # Construit les sections liées à un chapitre d’inspection.
 # Chaque section contient uniquement ses critères actifs.
-def build_inspection_sections(
-    *,
-    chapter: InspectionChapter,
-) -> list[dict]:
+def build_inspection_sections(*,chapter: InspectionChapter,) -> list[dict]:
     """
     Construit les sections actives d’un chapitre d’inspection.
     Les sections supprimées ou inactives sont exclues du résultat.
     """
 
-    sections = chapter.sections.filter(
-        is_deleted=False,
-        is_active=True,
-    ).order_by("reference")
+    sections = chapter.sections.all()
 
     return [
         {
@@ -279,7 +267,7 @@ def build_section_criteria(*,section: InspectionSection,) -> list[dict]:
     Les résultats restent vides pour une fiche d’inspection vierge.
     """
 
-    criteria = section.criteria.filter(is_deleted=False,is_active=True,).order_by("reference")
+    criteria = section.criteria.all()
 
     return [
         {
@@ -312,6 +300,7 @@ def build_blank_inspection_sheet(
     _validate_inspection_context(inspection_context=inspection_context,)
 
     inspection_version = _get_current_inspection_version(inspection_context=inspection_context,)
+    inspection_version = get_inspection_version_tree(inspection_version=inspection_version,)
 
     header = build_inspection_header(
         vehicle=vehicle,
@@ -525,3 +514,91 @@ def _get_inspection_criterion_or_error(
 
     return criterion
  
+
+
+# _get_active_criteria_prefetch
+# Build the prefetch used to load active inspection criteria.
+def _get_active_criteria_prefetch() -> Prefetch:
+    """
+    Return the Prefetch object for active inspection criteria.
+    """
+    return Prefetch(
+        "criteria",
+        queryset=InspectionCriterion.objects.filter(
+            is_deleted=False,
+            is_active=True,
+        ).order_by(
+            "reference",
+        ),
+    )
+
+# _get_active_sections_prefetch
+# Build the prefetch used to load active inspection sections.
+# Each section also loads its active criteria.
+def _get_active_sections_prefetch() -> Prefetch:
+    """
+    Return the Prefetch object for active inspection sections.
+    """
+    return Prefetch(
+        "sections",
+        queryset=(
+            InspectionSection.objects
+            .filter(
+                is_deleted=False,
+                is_active=True,
+            )
+            .prefetch_related(
+                _get_active_criteria_prefetch(),
+            )
+            .order_by(
+                "reference",
+            )
+        ),
+    )
+
+# _get_active_chapters_prefetch
+# Build the prefetch used to load active inspection chapters.
+# Each chapter also loads its active sections and criteria.
+def _get_active_chapters_prefetch() -> Prefetch:
+    """
+    Return the Prefetch object for active inspection chapters.
+    """
+    return Prefetch(
+        "chapters",
+        queryset=(
+            InspectionChapter.objects
+            .filter(
+                is_deleted=False,
+                is_active=True,
+            )
+            .prefetch_related(
+                _get_active_sections_prefetch(),
+            )
+            .order_by(
+                "reference",
+            )
+        ),
+    )
+
+
+# get_inspection_version_tree
+# Return one inspection version with its active configuration tree.
+# Active chapters, sections, and criteria are prefetched.
+def get_inspection_version_tree(
+    *,
+    inspection_version: InspectionVersion,
+) -> InspectionVersion:
+    """
+    Return the inspection version with its active tree loaded.
+    """
+    return (
+        InspectionVersion.objects
+        .prefetch_related(
+            _get_active_chapters_prefetch(),
+        )
+        .get(
+            id=inspection_version.id,
+            is_deleted=False,
+        )
+    )
+

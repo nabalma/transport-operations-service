@@ -364,10 +364,14 @@ class InspectionChapter(TimeStampedSoftDeletableModel):
     code = models.CharField(max_length=100,help_text="Code technique unique dans une version.",)
     title = models.CharField(max_length=255,help_text="Titre affiché sur la fiche d'inspection.",)
     is_active = models.BooleanField(default=True,help_text="Indique si le chapitre est disponible dans cette version.",)
+    position = models.PositiveIntegerField(
+    null=True,
+    blank=True,
+)
 
     class Meta:
         ordering = [
-            "reference",
+            "position",
         ]
         constraints = [
             models.UniqueConstraint(
@@ -416,6 +420,10 @@ class InspectionSection(TimeStampedSoftDeletableModel):
     code = models.CharField(max_length=100,)
     title = models.CharField(max_length=255,)
     is_active = models.BooleanField(default=True,)
+    position = models.PositiveIntegerField(
+    null=True,
+    blank=True,
+)
 
     class Meta:
         constraints = [
@@ -430,7 +438,7 @@ class InspectionSection(TimeStampedSoftDeletableModel):
     ]
 
         ordering = [
-            "reference",
+            "position",
         ]
 
     def __str__(self):
@@ -474,6 +482,10 @@ class InspectionCriterion(TimeStampedSoftDeletableModel):
     creates_defect_if_failed = models.BooleanField(default=False,)
     is_blocking_if_failed = models.BooleanField(default=False,)
     is_active = models.BooleanField(default=True,)
+    position = models.PositiveIntegerField(
+    null=True,
+    blank=True,
+)
 
     class Meta:
         constraints = [
@@ -488,7 +500,7 @@ class InspectionCriterion(TimeStampedSoftDeletableModel):
         ]
 
         ordering = [
-            "reference",
+            "position",
         ]
 
     def __str__(self):
