@@ -105,7 +105,13 @@ class InspectionContext(models.TextChoices):
     AFTER_INCIDENT = "AFTER_INCIDENT", "After incident"
     AFTER_MAINTENANCE = "AFTER_MAINTENANCE", "After maintenance"
 
-
+# InspectionStatus
+# Represents the lifecycle status of an inspection.
+class InspectionStatus(models.TextChoices):
+    IN_PROGRESS = "IN_PROGRESS", "In progress"
+    COMPLETED = "COMPLETED", "Completed"
+    CANCELLED = "CANCELLED", "Cancelled"
+    
 # -------------------------------------------------------------------
 # InspectionOverallResult
 # Résultat global de toute l’inspection.
@@ -124,6 +130,7 @@ class InspectionOverallResult(models.TextChoices):
 class InspectionCriterionResultValue(models.TextChoices):
     PASS = "PASS", "Pass"
     FAIL = "FAIL", "Fail"
+    NOT_APPLICABLE = "N/A", "Not applicable"
 
 # -------------------------------------------------------------------
 # InspectionLocationType

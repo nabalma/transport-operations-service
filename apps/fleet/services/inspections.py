@@ -1,13 +1,15 @@
 from datetime import date
 
-from apps.fleet.constants import InspectionContext
+from apps.fleet.constants import InspectionContext, InspectionStatus
+from apps.fleet.services.membership import _ensure_vehicle_has_active_membership
+from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
 from django.db import transaction
 from django.db.models import Prefetch, QuerySet
-from io import BytesIO
-from reportlab.pdfgen import canvas
+from django.utils import timezone
 
 from apps.fleet.models import Inspection, InspectionChapter, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
+
 
 # =======================================
 # ENREGISTRER UNE VERSION
@@ -329,4 +331,100 @@ def build_blank_inspection_sheet(
        
     }
 
+# =======================================
+# CREER UNE INSPECTION DUN VEHICULE
+# =======================================
+
+
+# _ensure_vehicle_has_no_in_progress_inspection
+# Ensures that the vehicle has no inspection currently in progress.
+def _ensure_vehicle_has_no_in_progress_inspection(*, vehicle):
+    """
+    Validate that the vehicle has no active inspection in progress.
+    """
+    has_in_progress_inspection = Inspection.objects.filter(
+        vehicle=vehicle,
+        status=InspectionStatus.IN_PROGRESS,
+        is_deleted=False,
+    ).exists()
+
+    if has_in_progress_inspection:
+        raise ValidationError(
+            {
+                "vehicle": (
+                    "This vehicle already has an inspection in progress."
+                )
+            }
+        )
+
+
+# create_inspection
+# Creates a new inspection for a vehicle.
+# Resolves the applicable inspection version automatically.
+@transaction.atomic
+def create_inspection(*,vehicle : Vehicle, inspection_context: str, inspector,)-> Inspection :
+    """
+    Create a new inspection using the current version
+    for the requested inspection context.
+    """
+
+    _validate_inspection_context(inspection_context=inspection_context,)
+    inspection_version = _get_current_inspection_version(inspection_context=inspection_context,)
+    _ensure_vehicle_has_active_membership(vehicle=vehicle,)
+    _get_valid_carrier_or_error(vehicle=vehicle,)
+    _ensure_vehicle_is_active(vehicle=vehicle,)
+    _ensure_vehicle_has_no_in_progress_inspection(vehicle=vehicle,)
+
+    inspection = Inspection.objects.create(
+        vehicle=vehicle,
+        inspection_version=inspection_version,
+        inspection_date=timezone.now(),
+        inspector=inspector,
+        status=InspectionStatus.IN_PROGRESS,
+        created_by=inspector,
+        updated_by=inspector,)
+
+    return inspection
+
+# =======================================
+# CANCELLER UNE INSPECTION DUN VEHICULE
+# =======================================
+
+# cancel_inspection
+# Cancels an inspection currently in progress.
+# Only an active inspection with status IN_PROGRESS can be cancelled.
+@transaction.atomic
+def cancel_inspection(*,inspection: Inspection,user,) -> Inspection:
+    """
+    Cancel an inspection and record the user who performed the action.
+    """
+    if inspection.is_deleted:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "A deleted inspection cannot be cancelled."
+                )
+            }
+        )
+
+    if inspection.status != InspectionStatus.IN_PROGRESS:
+        raise ValidationError(
+            {
+                "status": (
+                    "Only an inspection in progress can be cancelled."
+                )
+            }
+        )
+
+    inspection.status = InspectionStatus.CANCELLED
+    inspection.updated_by = user
+    inspection.save(
+        update_fields=[
+            "status",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+
+    return inspection
  

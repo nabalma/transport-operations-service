@@ -364,3 +364,33 @@ def reject_vehicle_membership_request(*,membership_request_id,rejected_by,decisi
     )
 
     return membership_request
+
+
+"""
++++++++++++++++++++++++++++++++++++++++++++++++++++
+SASSURER QUN VEHICULE A UNE MEMBERSHIP VALIDE
+++++++++++++++++++++++++++++++++++++++++++++++++++
+"""
+
+
+# _ensure_vehicle_has_active_membership
+# Ensures that the vehicle currently belongs to the fleet.
+def _ensure_vehicle_has_active_membership(*, vehicle):
+    """
+    Validate that the vehicle has an active fleet membership.
+    """
+    has_active_membership = VehicleMembership.objects.filter(
+        vehicle=vehicle,
+        status=VehicleMembershipStatus.ACTIVE,
+        exit_date__isnull=True,
+        is_deleted=False,
+    ).exists()
+
+    if not has_active_membership:
+        raise ValidationError(
+            {
+                "vehicle": (
+                    "This vehicle does not belong to the fleet."
+                )
+            }
+        )

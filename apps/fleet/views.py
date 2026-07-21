@@ -1,7 +1,8 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import build_blank_inspection_sheet, create_inspection_version, update_inspection_version_status
-from apps.fleet.services.membership_requests import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
+from apps.fleet.services.inspections import build_blank_inspection_sheet, cancel_inspection, create_inspection, create_inspection_version, update_inspection_version_status
+from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
+from apps.fleet.services.vehicles import _get_vehicle_or_error
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
@@ -9,7 +10,7 @@ from rest_framework.response import Response
 
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, CreateInspectionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
@@ -210,6 +211,45 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         sheet = build_blank_inspection_sheet(inspection_context=inspection_context,)
 
         return Response(sheet,status=status.HTTP_200_OK,)
+    
+    # start_inspection
+    # Creates a new inspection for the selected vehicle.
+    # Uses the authenticated user as the inspector.
+    @action(detail=False,methods=["post"],url_path="start-inspection",serializer_class=CreateInspectionSerializer,)
+    def start_inspection(self, request):
+        """
+        Create a new inspection with the IN_PROGRESS status.
+        The selected vehicle and inspection context are provided by the client.
+        The authenticated user is automatically assigned as the inspector.
+        """
+        serializer = CreateInspectionSerializer(data=request.data,)
+        serializer.is_valid(raise_exception=True,)
+        context = serializer.validated_data["inspection_context"]
+        vehicle = _get_vehicle_or_error(vehicle_id=serializer.validated_data["vehicle_id"],)
+
+        inspection = create_inspection(
+            vehicle=vehicle,
+            inspection_context=context,
+            inspector=request.user,
+            )
+        return Response(
+            InspectionSerializer(inspection).data,
+            status=status.HTTP_201_CREATED,)
+ 
+
+    # cancel
+    # Cancels an inspection currently in progress.
+    # Delegates all business rules to the service layer.
+    @action(detail=True,methods=["post"],url_path="cancel",)
+    def cancel(self, request, pk=None):
+        """
+        Cancel the selected inspection.
+        """
+        inspection = self.get_object()
+        inspection = cancel_inspection(inspection=inspection,user=request.user,)
+        serialiser = self.get_serializer(inspection)
+
+        return Response(serialiser.data,status=status.HTTP_200_OK,)
 
 
 

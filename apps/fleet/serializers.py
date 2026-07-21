@@ -532,7 +532,8 @@ class InspectionSerializer(serializers.ModelSerializer):
             "inspection_version",
             "context",
             "inspection_date",
-            "inspector_name",
+            "inspector",
+            "status",
             "overall_result",
             "comments",
             "criterion_results",
@@ -546,11 +547,22 @@ class InspectionSerializer(serializers.ModelSerializer):
             "id",
             "context",
             "criterion_results",
+            "status",
             "created_at",
             "created_by",
             "updated_at",
             "updated_by",
         )
+
+
+# CreateInspectionSerializer
+# Validates the data required to start an inspection.
+class CreateInspectionSerializer(serializers.Serializer):
+    vehicle_id = serializers.UUIDField()
+    inspection_context = serializers.CharField()
+
+
+
 
 
 # =============================================================================

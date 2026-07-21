@@ -121,3 +121,19 @@ def _ensure_vehicle_age_is_allowed(*,vehicle,tractor_policy,tanker_policy,):
                 )
             }
         )
+    
+
+# _ensure_vehicle_is_active
+# Ensures that the vehicle is active.
+def _ensure_vehicle_is_active(*, vehicle):
+    """
+    Validate that the vehicle is active.
+    """
+    if vehicle.status != VehicleStatus.ACTIVE:
+        raise ValidationError(
+            {
+                "vehicle": (
+                    "Ce véhicule n’est pas actif."
+                )
+            }
+        )

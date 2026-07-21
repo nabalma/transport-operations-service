@@ -4,7 +4,7 @@ from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
-from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
+from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionStatus, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
 from django.core.exceptions import ValidationError
 
@@ -519,14 +519,12 @@ class Inspection(TimeStampedSoftDeletableModel):
     id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
     vehicle = models.ForeignKey(Vehicle,on_delete=models.PROTECT,related_name="inspections",)
 
-    inspection_version = models.ForeignKey(
-    InspectionVersion,
-    on_delete=models.PROTECT,
-    related_name="inspections",
-)
+    inspection_version = models.ForeignKey(InspectionVersion,on_delete=models.PROTECT,related_name="inspections",)
 
     inspection_date = models.DateTimeField()
-    inspector_name = models.CharField(max_length=255,)
+    inspector = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.PROTECT,related_name="inspections",)
+    status = models.CharField(max_length=20,choices=InspectionStatus.choices,default=InspectionStatus.IN_PROGRESS,)
+
     overall_result = models.CharField(max_length=30,choices=InspectionOverallResult.choices,)
     comments = models.TextField(blank=True,)
 
@@ -568,30 +566,30 @@ class InspectionCriterionResult(TimeStampedSoftDeletableModel):
 
     inspection = models.ForeignKey(Inspection,on_delete=models.CASCADE,related_name="criterion_results",)
 
-    criterion = models.ForeignKey(
-    InspectionCriterion,
-    on_delete=models.PROTECT,
-    related_name="results",
-)
+    criterion = models.ForeignKey(InspectionCriterion,on_delete=models.PROTECT,related_name="results",)
 
     result = models.CharField(max_length=10,choices=InspectionCriterionResultValue.choices,)
     comment = models.TextField(blank=True,)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(
-                fields=["inspection", "criterion"],
-                name="unique_result_per_inspection_criterion",
-            ),
-        ]
+        models.UniqueConstraint(
+            fields=["inspection", "criterion"],
+            condition=models.Q(is_deleted=False),
+            name="unique_active_result_per_inspection_criterion",
+        ),
+    ]
 
     def clean(self):
+        """
+        Validate that the criterion belongs to the inspection version.
+        """
         super().clean()
 
         if not self.inspection_id or not self.criterion_id:
             return
 
-        criterion_version_id = (self.criterion.section.inspection_version_id)
+        criterion_version_id = (self.criterion.section.chapter.inspection_version_id)
         inspection_version_id = (self.inspection.inspection_version_id)
 
         if criterion_version_id != inspection_version_id:
@@ -629,9 +627,6 @@ class Defect(TimeStampedSoftDeletableModel):
 
     # Résultat précis ayant généré le défaut.
     source_inspection_criterion_result = models.OneToOneField(InspectionCriterionResult, on_delete=models.SET_NULL, blank=True, null=True, related_name="defect")
-
-    # Partie concernée par le défaut.
-    scope = models.CharField(max_length=20, choices=VehicleScope.choices)
 
     # Description du défaut constaté.
     description = models.TextField()
