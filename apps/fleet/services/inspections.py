@@ -4,11 +4,12 @@ from apps.fleet.constants import InspectionContext, InspectionStatus
 from apps.fleet.services.membership import _ensure_vehicle_has_active_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
+from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
-from apps.fleet.models import Inspection, InspectionChapter, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
+from apps.fleet.models import Inspection, InspectionChapter, InspectionCriterionResult, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
 
 
 # =======================================
@@ -427,4 +428,100 @@ def cancel_inspection(*,inspection: Inspection,user,) -> Inspection:
     )
 
     return inspection
+
+
+
+# =======================================================
+# ENREGISTRER UNE REPONSE A  UNE INSPECTION DUN VEHICULE
+# =======================================================
+
+# record_criterion_result
+# Records the result of one criterion for an inspection.
+# Only an active inspection in progress can receive a criterion result.
+@transaction.atomic
+def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriterion,result: str, user, comment: str | None = None,) -> InspectionCriterionResult:
+    """
+    Create a result for one criterion of an inspection in progress.
+    """
+    if inspection.is_deleted:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "A deleted inspection cannot receive criterion results."
+                )
+            }
+        )
+
+    if inspection.status != InspectionStatus.IN_PROGRESS:
+        raise ValidationError(
+            {
+                "inspection": (
+                    "Only an inspection in progress can receive "
+                    "criterion results."
+                )
+            }
+        )
+
+    has_active_result = InspectionCriterionResult.objects.filter(
+        inspection=inspection,
+        criterion=criterion,
+        is_deleted=False,
+    ).exists()
+
+    if has_active_result:
+        raise ValidationError(
+            {
+                "criterion": (
+                    "This criterion already has an active result "
+                    "for this inspection."
+                )
+            }
+        )
+
+    criterion_result = InspectionCriterionResult(
+        inspection=inspection,
+        criterion=criterion,
+        result=result,
+        comment=comment or "",
+        created_by=user,
+        updated_by=user,
+    )
+
+    try:
+        criterion_result.full_clean()
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.message_dict) from exc
+
+    criterion_result.save()
+
+    return criterion_result
+
+
+
+# _get_inspection_criterion_or_error
+# Retrieves an active inspection criterion by its identifier.
+def _get_inspection_criterion_or_error(
+    *,
+    criterion_id,
+) -> InspectionCriterion:
+    """
+    Return an active inspection criterion.
+    """
+    criterion = InspectionCriterion.objects.filter(
+        id=criterion_id,
+        is_deleted=False,
+        is_active=True,
+    ).first()
+
+    if criterion is None:
+        raise ValidationError(
+            {
+                "criterion_id": (
+                    "No active inspection criterion was found "
+                    "with this identifier."
+                )
+            }
+        )
+
+    return criterion
  

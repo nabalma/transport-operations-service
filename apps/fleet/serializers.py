@@ -1,4 +1,4 @@
-from apps.fleet.constants import InspectionContext, InspectionLocationType
+from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionLocationType
 from rest_framework import serializers
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionChapter,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
@@ -506,7 +506,22 @@ class InspectionCriterionSerializer(serializers.ModelSerializer):
             "updated_by",
         )
 
+# RecordCriterionResultInputSerializer
+# Validates the input required to record one criterion result.
+class RecordCriterionResultInputSerializer(serializers.Serializer):
+    criterion_id = serializers.UUIDField()
 
+    result = serializers.ChoiceField(
+        choices=InspectionCriterionResultValue.choices,
+    )
+
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+    )
+
+    
 # =============================================================================
 # InspectionSerializer
 #

@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import build_blank_inspection_sheet, cancel_inspection, create_inspection, create_inspection_version, update_inspection_version_status
+from apps.fleet.services.inspections import _get_inspection_criterion_or_error, build_blank_inspection_sheet, cancel_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from apps.fleet.services.vehicles import _get_vehicle_or_error
 from rest_framework.viewsets import ModelViewSet
@@ -10,7 +10,7 @@ from rest_framework.response import Response
 
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, CreateInspectionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, CreateInspectionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, RecordCriterionResultInputSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
@@ -188,8 +188,7 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
             "criterion_results__criterion",
             "criterion_results__criterion__section",
             (
-                "criterion_results__criterion__section"
-                "__inspection_version"
+               "criterion_results__criterion__section__chapter__inspection_version"
             ),
         )
         .filter(is_deleted=False)
@@ -250,6 +249,27 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         serialiser = self.get_serializer(inspection)
 
         return Response(serialiser.data,status=status.HTTP_200_OK,)
+    
+
+    @action(detail=True,methods=["post"],url_path="record-criterion-result",serializer_class=RecordCriterionResultInputSerializer,)
+    def record_result(self, request, pk=None):
+        """
+        Record the result of one criterion for an inspection.
+        """
+        inspection = self.get_object()
+        input_serializer = self.get_serializer(data=request.data,)
+        input_serializer.is_valid(raise_exception=True,)
+        criterion = _get_inspection_criterion_or_error(criterion_id=input_serializer.validated_data["criterion_id"],)
+        criterion_result = record_criterion_result(
+            inspection=inspection,
+            criterion=criterion,
+            result=input_serializer.validated_data["result"],
+            comment=input_serializer.validated_data.get("comment"),
+            user=request.user,
+            )
+        output_serializer = InspectionCriterionResultSerializer(criterion_result,)
+        return Response(output_serializer.data,status=status.HTTP_201_CREATED,)
+
 
 
 
@@ -261,7 +281,7 @@ class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewS
             "inspection__inspection_version",
             "criterion",
             "criterion__section",
-            "criterion__section__inspection_version",
+            "criterion__section",
         ).filter(is_deleted=False)
     serializer_class = InspectionCriterionResultSerializer
     permission_classes = [InspectionPermission]
