@@ -394,3 +394,33 @@ def _ensure_vehicle_has_active_membership(*, vehicle):
                 )
             }
         )
+
+"""
++++++++++++++++++++++++++++++++++++++++++++++++++++
+RECUPERER UNE MEMBERSHIP VALIDE DUN CAMION VALIDE
+++++++++++++++++++++++++++++++++++++++++++++++++++
+""" 
+
+# get_active_vehicle_membership
+# Returns the active membership of a vehicle.
+def get_active_vehicle_membership(*, vehicle) -> VehicleMembership:
+    """
+    Return the active and non-deleted vehicle membership.
+    """
+    membership = VehicleMembership.objects.filter(
+        vehicle=vehicle,
+        status=VehicleMembershipStatus.ACTIVE,
+        exit_date__isnull=True,
+        is_deleted=False,
+    ).first()
+
+    if membership is None:
+        raise ValidationError(
+            {
+                "vehicle": (
+                    "This vehicle does not belong to the fleet."
+                )
+            }
+        )
+
+    return membership

@@ -1,4 +1,4 @@
-from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
+from apps.fleet.views import CarrierViewSet, CorrectiveActionViewSet, DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -9,6 +9,7 @@ router.register("tanker-compartments",TankerCompartmentViewSet, basename = "tank
 router.register("vehicle-memberships",VehicleMembershipViewSet,basename="vehicle-membership",)
 router.register("vehicle-membership-requests",VehicleMembershipRequestViewSet,basename="vehicle-membership-request",)
 router.register("vehicle-documents",VehicleDocumentViewSet,basename="vehicle-document",)
+router.register("inspection-scoring-policies",InspectionScoringPolicyConfigurationViewSet,basename="inspection-scoring-policy",)
 router.register("inspection-versions",InspectionVersionViewSet,basename="inspection-version",)
 router.register("inspection-chapters",InspectionChapterViewSet,basename="inspection-chapter",)
 router.register("inspection-sections",InspectionSectionViewSet,basename="inspection-section",)

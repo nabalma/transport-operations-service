@@ -1,6 +1,6 @@
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import _get_inspection_criterion_or_error, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
+from apps.fleet.services.inspections import _get_inspection_criterion_or_error, activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from apps.fleet.services.vehicles import _get_vehicle_or_error
 from rest_framework.viewsets import ModelViewSet
@@ -9,8 +9,8 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
-from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, CreateInspectionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, RecordCriterionResultInputSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.serializers import CarrierSerializer, CorrectiveActionSerializer, CreateInspectionSerializer, DefectReleaseValidationSerializer, DefectSerializer, DowntimeSerializer, EvidenceSerializer, InspectionChapterSerializer, InspectionScoringPolicyConfigurationSerializer, InspectionVersionSerializer, InspectionCriterionResultSerializer, InspectionCriterionSerializer, InspectionSectionSerializer, InspectionSerializer, InspectionVersionSerializer, MaintenanceSerializer, NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, RecordCriterionResultInputSerializer, ReturnToServiceSerializer, TankerCompartmentSerializer, VehicleAgePolicyConfigurationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer, VehicleDocumentSerializer, VehicleMembershipRequestSerializer, VehicleMembershipSerializer, VehicleSerializer
 
 
 class CarrierViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
@@ -122,6 +122,25 @@ class VehicleDocumentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = VehicleDocument.objects.filter(is_deleted=False)
     serializer_class = VehicleDocumentSerializer
     permission_classes=[VehiclePermission]
+
+# InspectionScoringPolicyConfigurationViewSet
+# Manages inspection scoring policy configurations.
+class InspectionScoringPolicyConfigurationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    queryset = (InspectionScoringPolicyConfiguration.objects.filter(is_deleted=False))
+    serializer_class = InspectionScoringPolicyConfigurationSerializer
+    permission_classes = [InspectionConfigurationPermission,]
+
+    # activate
+    # Activates the selected scoring policy.
+    @action(detail=True,methods=["post"],)
+    def activate(self, request, pk=None):
+        """
+        Activate the selected scoring policy.
+        """
+        policy = self.get_object()
+        policy = activate_inspection_scoring_policy(policy=policy,user=request.user,)
+        serializer = self.get_serializer(policy)
+        return Response(serializer.data)
 
 
 class InspectionVersionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

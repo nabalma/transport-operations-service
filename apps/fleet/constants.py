@@ -111,7 +111,7 @@ class InspectionStatus(models.TextChoices):
     IN_PROGRESS = "IN_PROGRESS", "In progress"
     COMPLETED = "COMPLETED", "Completed"
     CANCELLED = "CANCELLED", "Cancelled"
-    
+
 # -------------------------------------------------------------------
 # InspectionOverallResult
 # Résultat global de toute l’inspection.
@@ -351,6 +351,9 @@ class UserGroup:
     MANAGER = "Manager"
 
 
-# ---------------------------------------------
-# APPROBATION
-# ---------------------------------------------
+# InspectionScoringPolicyStatus
+# Defines the lifecycle status of a scoring policy.
+class InspectionScoringPolicyStatus(models.TextChoices):
+    DRAFT = "DRAFT", "Draft"
+    ACTIVE = "ACTIVE", "Active"
+    RETIRED = "RETIRED", "Retired"

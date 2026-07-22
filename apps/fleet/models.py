@@ -4,9 +4,12 @@ from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
-from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionStatus, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
+from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
 from django.core.exceptions import ValidationError
+
+from django.core.validators import MaxValueValidator, MinValueValidator
+from django.db.models import Q
 
 # -------------------------------------------------------------------
 # 1-Base model
@@ -620,6 +623,69 @@ class InspectionCriterionResult(TimeStampedSoftDeletableModel):
             f"{self.criterion.reference} - "
             f"{self.result}"
         )
+
+
+# InspectionScoringPolicy
+# Defines scoring thresholds by membership type and inspection context.
+class InspectionScoringPolicyConfiguration(TimeStampedSoftDeletableModel):
+    
+    id = models.UUIDField(primary_key=True,default=uuid.uuid4,editable=False,)
+    membership_type = models.CharField(max_length=20,choices=VehicleMembershipType.choices,)
+    context = models.CharField(max_length=30,choices=InspectionContext.choices,)
+    pass_threshold = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100),
+        ],
+    )
+
+    pass_with_observation_threshold = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[
+            MinValueValidator(0),
+            MaxValueValidator(100),
+        ],
+    )
+
+    status = models.CharField(
+        max_length=20,
+        choices=InspectionScoringPolicyStatus.choices,
+        default=InspectionScoringPolicyStatus.DRAFT,
+    )
+
+    activated_at = models.DateTimeField(null=True,blank=True,editable=False,)
+    retired_at = models.DateTimeField(null=True,blank=True,editable=False,)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=[
+                    "membership_type",
+                    "context",
+                ],
+                condition=Q(
+                    status=InspectionScoringPolicyStatus.ACTIVE,
+                    is_deleted=False,
+                ),
+                name="unique_active_inspection_scoring_policy",
+            ),
+        ]
+
+    # __str__
+    # Returns a readable representation of the scoring policy.
+    def __str__(self):
+        """
+        Return the membership type, context, and status.
+        """
+        return (
+            f"{self.get_membership_type_display()} - "
+            f"{self.get_context_display()} - "
+            f"{self.get_status_display()}"
+        )
+
 
 # -------------------------------------------------------------------
 # 13-Defect

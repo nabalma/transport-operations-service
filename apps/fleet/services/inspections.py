@@ -1,7 +1,8 @@
 from datetime import date
+from decimal import Decimal
 
-from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionStatus
-from apps.fleet.services.membership import _ensure_vehicle_has_active_membership
+from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
+from apps.fleet.services.membership import _ensure_vehicle_has_active_membership, get_active_vehicle_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -9,7 +10,7 @@ from django.db import transaction
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
-from apps.fleet.models import Inspection, InspectionChapter, InspectionCriterionResult, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
+from apps.fleet.models import Inspection, InspectionChapter, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
 
 
 # =======================================
@@ -656,8 +657,9 @@ def calculate_inspection_overall_result(*,inspection: Inspection,) -> str:
     """
     Calculate the overall result of an inspection.
     """
-    PASS_THRESHOLD = 95
-    PASS_WITH_OBSERVATION_THRESHOLD = 80
+    membership = get_active_vehicle_membership(vehicle=inspection.vehicle,)
+    scoring_policy = get_active_inspection_scoring_policy(membership_type=membership.membership_type,context=inspection.context,)
+
 
     criterion_results = (
         InspectionCriterionResult.objects
@@ -682,12 +684,22 @@ def calculate_inspection_overall_result(*,inspection: Inspection,) -> str:
     possible_points = applicable_results.count()
     earned_points = applicable_results.filter(result=InspectionCriterionResultValue.PASS,).count()
 
-    score_percentage = (earned_points / possible_points) * 100
+    if possible_points == 0:
+        raise ValidationError(
+            {
+                "overall_result": (
+                    "The inspection score cannot be calculated because "
+                    "there are no applicable criterion results."
+                ),
+            },
+    )
 
-    if score_percentage >= PASS_THRESHOLD:
+    score_percentage = (Decimal(earned_points)/ Decimal(possible_points)* Decimal("100"))
+
+    if score_percentage >= scoring_policy.pass_threshold:
         return InspectionOverallResult.PASS
 
-    if score_percentage >= PASS_WITH_OBSERVATION_THRESHOLD:
+    if score_percentage >= scoring_policy.pass_threshold:
         return InspectionOverallResult.PASS_WITH_OBSERVATION
 
     return InspectionOverallResult.FAIL
@@ -730,9 +742,144 @@ def complete_inspection(*,inspection: Inspection,user,) -> Inspection:
         "status",
         "updated_by",
         "updated_at",
-    ]
-)
-
-
+    ])
 
     return inspection
+
+
+# get_active_inspection_scoring_policy
+# Returns the active scoring policy for a membership type and context.
+def get_active_inspection_scoring_policy(*,membership_type: str,context: str,) -> InspectionScoringPolicyConfiguration:
+    """
+    Return the active and non-deleted scoring policy configuration.
+    """
+    try:
+        return InspectionScoringPolicyConfiguration.objects.get(
+            membership_type=membership_type,
+            context=context,
+            status=InspectionScoringPolicyStatus.ACTIVE,
+            is_deleted=False,
+        )
+    except InspectionScoringPolicyConfiguration.DoesNotExist as exc:
+        raise ValidationError(
+            {
+                "scoring_policy": (
+                    "No active scoring policy configuration was found."
+                ),
+            },
+        ) from exc
+    
+# _get_scoring_policy_for_activation
+# Returns the scoring policy to activate.
+def _get_scoring_policy_for_activation(*,policy_id,) -> InspectionScoringPolicyConfiguration:
+    """
+    Return the non-deleted scoring policy locked for update.
+    """
+    try:
+        return (
+            InspectionScoringPolicyConfiguration.objects
+            .select_for_update()
+            .get(
+                pk=policy_id,
+                is_deleted=False,
+            )
+        )
+    except InspectionScoringPolicyConfiguration.DoesNotExist as exc:
+        raise ValidationError(
+            {
+                "scoring_policy": (
+                    "The scoring policy does not exist or has been deleted."
+                ),
+            },
+        ) from exc
+    
+
+# _ensure_scoring_policy_can_be_activated
+# Ensures that only a draft scoring policy can be activated.
+def _ensure_scoring_policy_can_be_activated(*,policy: InspectionScoringPolicyConfiguration,) -> None:
+    """
+    Validate that the scoring policy can transition to ACTIVE.
+    """
+    if policy.status != InspectionScoringPolicyStatus.DRAFT:
+        raise ValidationError(
+            {
+                "status": (
+                    "Only a draft scoring policy can be activated."
+                ),
+            },
+        )
+    
+
+# _retire_active_scoring_policy
+# Retires the active policy for a membership type and inspection context.
+def _retire_active_scoring_policy(*,membership_type: str,context: str,user,retired_at,) -> None:
+    """
+    Retire the current active scoring policy when one exists.
+    """
+    current_policy = (
+        InspectionScoringPolicyConfiguration.objects
+        .select_for_update()
+        .filter(
+            membership_type=membership_type,
+            context=context,
+            status=InspectionScoringPolicyStatus.ACTIVE,
+            is_deleted=False,
+        )
+        .first()
+    )
+
+    if current_policy is None:
+        return
+
+    current_policy.status = InspectionScoringPolicyStatus.RETIRED
+    current_policy.retired_at = retired_at
+    current_policy.updated_by = user
+
+    current_policy.save(
+        update_fields=[
+            "status",
+            "retired_at",
+            "updated_by",
+            "updated_at",
+        ],
+    )
+    
+
+# _activate_scoring_policy
+# Activates the selected scoring policy.
+def _activate_scoring_policy(*,policy: InspectionScoringPolicyConfiguration,user,activated_at,) -> InspectionScoringPolicyConfiguration:
+    """
+    Activate the selected scoring policy.
+    """
+    policy.status = InspectionScoringPolicyStatus.ACTIVE
+    policy.activated_at = activated_at
+    policy.retired_at = None
+    policy.updated_by = user
+
+    policy.save(
+        update_fields=[
+            "status",
+            "activated_at",
+            "retired_at",
+            "updated_by",
+            "updated_at",
+        ],
+    )
+
+    return policy
+
+
+# activate_inspection_scoring_policy
+# Activates an inspection scoring policy.
+# activate_inspection_scoring_policy
+# Activates an inspection scoring policy.
+@transaction.atomic
+def activate_inspection_scoring_policy(*,policy: InspectionScoringPolicyConfiguration,user,) -> InspectionScoringPolicyConfiguration:
+    """
+    Activate an inspection scoring policy.
+    """
+    policy = _get_scoring_policy_for_activation(policy_id=policy.pk,)
+    _ensure_scoring_policy_can_be_activated(policy=policy,)
+    activation_date = timezone.now()
+    _retire_active_scoring_policy(membership_type=policy.membership_type,context=policy.context,user=user,retired_at=activation_date,)
+    return _activate_scoring_policy(policy=policy,user=user,activated_at=activation_date,)

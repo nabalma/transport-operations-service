@@ -1,7 +1,7 @@
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionLocationType
 from rest_framework import serializers
 
-from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionChapter,InspectionCriterion, InspectionCriterionResult, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence,Inspection, InspectionChapter,InspectionCriterion, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
 
 # -------------------------
 # --- SUMMARY SERIALIZERS
@@ -362,6 +362,27 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
+
+
+# -- InspectionScoringPolicyConfiguration
+class InspectionScoringPolicyConfigurationSerializer(serializers.ModelSerializer,):
+    class Meta:
+        model = InspectionScoringPolicyConfiguration
+        fields = "__all__"
+
+        read_only_fields = [
+            "id",
+            "activated_at",
+            "retired_at",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+            "is_deleted",
+            "deleted_at",
+            "deleted_by",
+        ]
+
 
 # =============================================================================
 # InspectionContextVersionSerializer
