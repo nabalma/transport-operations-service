@@ -1,10 +1,11 @@
+from django.utils import timezone
 import uuid
 
 from django.conf import settings
 from django.db import models
 
 from apps.fleet.upload_paths import vehicle_document_upload_path
-from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectSeverity, DefectSourceType, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
+from apps.fleet.constants import CarrierStatus, CorrectiveActionStatus, DefectCreationSource, DefectSeverity, DefectStatus, DowntimeSourceType, DowntimeStatus, EvidenceOwnerType, EvidenceType,InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus, MaintenanceStatus, MaintenanceType, NextTripEligibilityReasonType, NextTripEligibilityResult, ReturnToServiceDecision, ReturnToServiceSourceType, ValidationDecision, VehicleAgePolicyTarget, VehicleAvailabilityReasonType, VehicleAvailabilityResult, VehicleDocumentType, VehicleMembershipRequestStatus, VehicleMembershipStatus, VehicleMembershipType, VehicleScope, VehicleStatus  
 
 from django.core.exceptions import ValidationError
 
@@ -698,7 +699,7 @@ class Defect(TimeStampedSoftDeletableModel):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="defects")
 
     # Origine du défaut.
-    source_type = models.CharField(max_length=30, choices=DefectSourceType.choices)
+    creation_source = models.CharField(max_length=20,choices=DefectCreationSource.choices,default=DefectCreationSource.MANUAL,)
 
     # Inspection source si le défaut vient d’une inspection.
     source_inspection = models.ForeignKey(Inspection, on_delete=models.SET_NULL, blank=True, null=True, related_name="defects")
@@ -709,20 +710,14 @@ class Defect(TimeStampedSoftDeletableModel):
     # Description du défaut constaté.
     description = models.TextField()
 
-    # Gravité métier ou technique.
-    severity = models.CharField(max_length=20, choices=DefectSeverity.choices)
-
-    # Si true, rend le Vehicle non éligible tant que le blocage n’est pas levé.
-    is_blocking = models.BooleanField(default=False)
-
-    # Cycle de vie du défaut.
+   # Cycle de vie du défaut.
     status = models.CharField(max_length=30, choices=DefectStatus.choices, default=DefectStatus.OPEN)
 
     # Date de détection du défaut.
-    detected_at = models.DateTimeField()
+    detected_at = models.DateTimeField(default=timezone.now,)
 
     def __str__(self):
-        return f"{self.vehicle} - {self.severity} - {self.status}"
+        return f"{self.vehicle} - {self.status}"
 
 
 # -------------------------------------------------------------------

@@ -142,15 +142,13 @@ class InspectionLocationType(models.TextChoices):
 
 
 # -------------------------------------------------------------------
-# DefectSourceType
-# Origine d’un défaut/anomalie.
+# DefectCreationSource
+# Indique si le défaut a été créé manuellement ou automatiquement.
 # -------------------------------------------------------------------
-class DefectSourceType(models.TextChoices):
-    INSPECTION = "INSPECTION", "Inspection"
-    OBSERVATION = "OBSERVATION", "Observation"
-    INCIDENT = "INCIDENT", "Incident"
-    MAINTENANCE = "MAINTENANCE", "Maintenance"
 
+class DefectCreationSource(models.TextChoices):
+    MANUAL = "MANUAL", "Manuel"
+    SYSTEM = "SYSTEM", "Automatique"
 
 # -------------------------------------------------------------------
 # DefectSeverity
