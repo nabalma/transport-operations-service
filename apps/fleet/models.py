@@ -719,6 +719,29 @@ class Defect(TimeStampedSoftDeletableModel):
     def __str__(self):
         return f"{self.vehicle} - {self.status}"
 
+    # clean
+# Valide la cohérence des informations sources du défaut.
+def clean(self):
+    """
+    Validate that the criterion result belongs to the source inspection.
+    """
+    super().clean()
+
+    if (
+        self.source_inspection_criterion_result
+        and self.source_inspection
+        and self.source_inspection_criterion_result.inspection_id
+        != self.source_inspection_id
+    ):
+        raise ValidationError(
+            {
+                "source_inspection_criterion_result": (
+                    "The criterion result does not belong to "
+                    "the source inspection."
+                )
+            }
+        )
+
 
 # -------------------------------------------------------------------
 # 14-CorrectiveAction

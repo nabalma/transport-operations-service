@@ -487,7 +487,7 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
 
     if (
     criterion_result.result == InspectionCriterionResultValue.FAIL and criterion_result.criterion.creates_defect_if_failed ):
-        create_defect_from_failed_criterion_result(criterion_result=criterion_result,)
+        create_defect_from_failed_criterion_result(criterion_result=criterion_result,user=user)
 
     return criterion_result
 

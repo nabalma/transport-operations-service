@@ -95,6 +95,20 @@ class InspectionCriterionSummarySerializer(serializers.ModelSerializer):
         )
 
 
+# -- DefectSummary
+class DefectSummarySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Defect
+        fields = (
+            "id",
+            "creation_source",
+            "description",
+            "status",
+            "detected_at",
+        )
+
+
+
 # =============================================================================
 # InspectionCriterionResultSummarySerializer
 #
@@ -105,9 +119,9 @@ class InspectionCriterionSummarySerializer(serializers.ModelSerializer):
 class InspectionCriterionResultSummarySerializer(
     serializers.ModelSerializer
 ):
-    criterion = InspectionCriterionSummarySerializer(
-        read_only=True,
-    )
+    criterion = InspectionCriterionSummarySerializer(read_only=True,)
+    defect = DefectSummarySerializer(read_only=True,)
+
 
     class Meta:
         model = InspectionCriterionResult
@@ -116,23 +130,9 @@ class InspectionCriterionResultSummarySerializer(
             "criterion",
             "result",
             "comment",
+            "defect"
+            
         )
-
-
-
-
-# -- DefectSummary
-class DefectSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Defect
-        fields = [
-            "scope",
-            "description",
-            "severity",
-            "is_blocking",
-            "status",
-        ]
-
 
 
 
@@ -580,6 +580,7 @@ class InspectionSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_at",
             "updated_by",
+            
         )
 
         read_only_fields = (
