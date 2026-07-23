@@ -699,7 +699,7 @@ class Defect(TimeStampedSoftDeletableModel):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="defects")
 
     # Origine du défaut.
-    creation_source = models.CharField(max_length=20,choices=DefectCreationSource.choices,default=DefectCreationSource.MANUAL,)
+    creation_source = models.CharField(max_length=20,choices=DefectCreationSource.choices,default=DefectCreationSource.USER,)
 
     # Inspection source si le défaut vient d’une inspection.
     source_inspection = models.ForeignKey(Inspection, on_delete=models.SET_NULL, blank=True, null=True, related_name="defects")

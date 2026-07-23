@@ -2,6 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
+from apps.fleet.services.defects import create_defect_from_failed_criterion_result
 from apps.fleet.services.membership import _ensure_vehicle_has_active_membership, get_active_vehicle_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
@@ -483,6 +484,10 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
         raise ValidationError(exc.message_dict) from exc
 
     criterion_result.save()
+
+    if (
+    criterion_result.result == InspectionCriterionResultValue.FAIL and criterion_result.criterion.creates_defect_if_failed ):
+        create_defect_from_failed_criterion_result(criterion_result=criterion_result,)
 
     return criterion_result
 

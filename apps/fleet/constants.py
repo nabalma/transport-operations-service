@@ -147,8 +147,8 @@ class InspectionLocationType(models.TextChoices):
 # -------------------------------------------------------------------
 
 class DefectCreationSource(models.TextChoices):
-    MANUAL = "MANUAL", "Manuel"
-    SYSTEM = "SYSTEM", "Automatique"
+    SYSTEM = "SYSTEM", "Créé par le système"
+    USER = "USER", "Créé par un utilisateur"
 
 # -------------------------------------------------------------------
 # DefectSeverity
