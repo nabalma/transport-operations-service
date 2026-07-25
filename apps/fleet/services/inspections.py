@@ -493,30 +493,7 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
 
 
 
-# _get_inspection_criterion_or_error
-# Retrieves an active inspection criterion by its identifier.
-def _get_inspection_criterion_or_error(*,criterion_id,) -> InspectionCriterion:
-    """
-    Return an active inspection criterion.
-    """
-    criterion = InspectionCriterion.objects.filter(
-        id=criterion_id,
-        is_deleted=False,
-        is_active=True,
-    ).first()
 
-    if criterion is None:
-        raise ValidationError(
-            {
-                "criterion_id": (
-                    "No active inspection criterion was found "
-                    "with this identifier."
-                )
-            }
-        )
-
-    return criterion
- 
 
 
 # _get_active_criteria_prefetch

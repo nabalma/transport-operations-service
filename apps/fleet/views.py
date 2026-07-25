@@ -1,12 +1,15 @@
+from apps.fleet.filters import VehicleFilter
 from apps.fleet.mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission, VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.services.inspections import _get_inspection_criterion_or_error, activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
+from apps.fleet.selectors import _get_inspection_criterion_or_error, _get_vehicle_or_error,list_defects_with_source_and_resolution, list_inspections_with_results, list_next_trip_eligibility_evaluations, list_vehicle_availability_evaluations, list_vehicle_membership_requests, list_vehicles
+from apps.fleet.services.inspections import activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
-from apps.fleet.services.vehicles import _get_vehicle_or_error
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
+from django_filters.rest_framework import DjangoFilterBackend
+
 
 
 from apps.fleet.models import Carrier, CorrectiveAction, Defect, DefectReleaseValidation, Downtime, Evidence, Inspection, InspectionChapter, InspectionCriterion, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionSection, InspectionVersion, Maintenance, NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason, ReturnToService, TankerCompartment, Vehicle, VehicleAgePolicyConfiguration, VehicleAvailabilityEvaluation, VehicleAvailabilityEvaluationReason, VehicleDocument, VehicleMembership, VehicleMembershipRequest
@@ -27,9 +30,12 @@ class VehicleAgePolicyConfigurationViewSet(AuditUserMixin,ModelViewSet,):
        
 
 class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
-   queryset = Vehicle.objects.select_related("carrier").prefetch_related( "tanker_compartments","vehicle_memberships","documents").filter(is_deleted=False)
+   queryset = list_vehicles()
    serializer_class = VehicleSerializer
    permission_classes=[VehiclePermission]
+
+   filter_backends = [DjangoFilterBackend]
+   filterset_class = VehicleFilter
 
 
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
@@ -45,7 +51,7 @@ class VehicleMembershipViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
   
 
 class VehicleMembershipRequestViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = VehicleMembershipRequest.objects.filter(is_deleted=False)
+    queryset = list_vehicle_membership_requests()
     serializer_class = VehicleMembershipRequestSerializer
     permission_classes =[VehicleMembershipRequestPermission]
 
@@ -198,20 +204,7 @@ class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 # Charge la version utilisée et les résultats avec leurs critères.
 # =============================================================================
 class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (Inspection.objects.select_related(
-            "vehicle",
-            "inspection_version",
-        )
-        .prefetch_related(
-            "criterion_results",
-            "criterion_results__criterion",
-            "criterion_results__criterion__section",
-            (
-               "criterion_results__criterion__section__chapter__inspection_version"
-            ),
-        )
-        .filter(is_deleted=False)
-    )
+    queryset = list_inspections_with_results()
 
     serializer_class = InspectionSerializer
     permission_classes = [InspectionPermission]
@@ -319,9 +312,7 @@ class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewS
 
 
 class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = Defect.objects .select_related("vehicle","source_inspection","source_inspection_criterion_result",
-    ).prefetch_related("corrective_actions","release_validations",
-    ).filter(is_deleted=False)
+    queryset = list_defects_with_source_and_resolution()
     serializer_class = DefectSerializer
 
 
@@ -368,15 +359,12 @@ class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
 
 
 class VehicleAvailabilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (VehicleAvailabilityEvaluation.objects
-        .select_related("vehicle")
-        .filter(is_deleted=False)
-    )
+    queryset = list_vehicle_availability_evaluations()
     serializer_class = VehicleAvailabilityEvaluationSerializer
   
 
 class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (VehicleAvailabilityEvaluation.objects
+    queryset = (VehicleAvailabilityEvaluationReason.objects
     .select_related("vehicle")
     .prefetch_related("evaluation_reasons")
     .filter(is_deleted=False)
@@ -386,11 +374,7 @@ class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
 
 
 class NextTripEligibilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (NextTripEligibilityEvaluation.objects
-    .select_related("vehicle")
-    .prefetch_related("evaluation_reasons")
-    .filter(is_deleted=False)
-)
+    queryset = list_next_trip_eligibility_evaluations()
     serializer_class = NextTripEligibilityEvaluationSerializer
   
 
