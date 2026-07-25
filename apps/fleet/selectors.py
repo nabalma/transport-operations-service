@@ -1,4 +1,4 @@
-from apps.fleet.models import Defect, Inspection, InspectionCriterion, NextTripEligibilityEvaluation, Vehicle, VehicleAvailabilityEvaluation, VehicleMembershipRequest
+from apps.fleet.models_new import Defect, Inspection, InspectionCriterion, NextTripEligibilityEvaluation, Vehicle, VehicleAvailabilityEvaluation, VehicleMembershipRequest
 from rest_framework.exceptions import ValidationError
 from django.db.models import QuerySet
 

@@ -2,7 +2,7 @@ from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 
 from apps.fleet.constants import (DefectCreationSource,InspectionCriterionResultValue,)
-from apps.fleet.models import Defect
+from apps.fleet.models_new import Defect
 
 
 # _build_defect_description

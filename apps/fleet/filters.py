@@ -1,4 +1,4 @@
-from apps.fleet.models import Vehicle
+from apps.fleet.models_new import Vehicle
 import django_filters
 
 
