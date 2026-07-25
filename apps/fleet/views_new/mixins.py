@@ -3,8 +3,6 @@ from rest_framework import status
 from rest_framework.response import Response
 
 
-
-
 # -------------------------------------------------------------------
 # AuditUserMixin
 # Renseigne automatiquement l'utilisateur qui crée ou modifie un objet.
