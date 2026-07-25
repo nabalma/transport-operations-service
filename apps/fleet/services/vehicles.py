@@ -1,5 +1,5 @@
 from apps.fleet.constants import CarrierStatus, VehicleStatus
-from apps.fleet.models_new import Vehicle, VehicleAgePolicyConfiguration
+from apps.fleet.models import Vehicle, VehicleAgePolicyConfiguration
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
 

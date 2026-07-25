@@ -1,5 +1,5 @@
 from apps.fleet.constants import CarrierStatus, VehicleAgePolicyTarget, VehicleMembershipRequestStatus, VehicleMembershipStatus
-from apps.fleet.models_new import Vehicle, VehicleMembership, VehicleMembershipRequest
+from apps.fleet.models import Vehicle, VehicleMembership, VehicleMembershipRequest
 from apps.fleet.selectors import _get_vehicle_or_error
 from apps.fleet.services.vehicles import _ensure_vehicle_age_is_allowed, _get_current_vehicle_age_policy_or_error, _get_valid_carrier_or_error,activate_vehicle
 from rest_framework.exceptions import ValidationError

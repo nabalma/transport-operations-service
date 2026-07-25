@@ -11,7 +11,7 @@ from django.db import transaction
 from django.db.models import Prefetch, QuerySet
 from django.utils import timezone
 
-from apps.fleet.models_new import Inspection, InspectionChapter, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
+from apps.fleet.models import Inspection, InspectionChapter, InspectionCriterionResult, InspectionScoringPolicyConfiguration, InspectionVersion, InspectionCriterion, InspectionSection, Vehicle
 
 
 # =======================================
