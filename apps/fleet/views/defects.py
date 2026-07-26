@@ -8,8 +8,8 @@ from rest_framework.viewsets import ModelViewSet
 
 
 
-from apps.fleet.models import CorrectiveAction, DefectReleaseValidation
-from apps.fleet.serializers import CorrectiveActionSerializer, DefectReleaseValidationSerializer, DefectSerializer
+from apps.fleet.models import DefectReleaseValidation
+from apps.fleet.serializers import DefectReleaseValidationSerializer, DefectSerializer
 
 
 
@@ -18,13 +18,6 @@ class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     serializer_class = DefectSerializer
 
 
-class CorrectiveActionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (CorrectiveAction.objects
-        .select_related("defect")
-        .filter(is_deleted=False)
-    )
-    serializer_class = CorrectiveActionSerializer
- 
 
 
 class DefectReleaseValidationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

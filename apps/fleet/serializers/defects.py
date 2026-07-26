@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from apps.fleet.models import Defect,CorrectiveAction,DefectReleaseValidation
+from apps.fleet.models import Defect,DefectReleaseValidation
 
 
 # -- DefectSummary
@@ -14,17 +14,6 @@ class DefectSummarySerializer(serializers.ModelSerializer):
             "status",
             "detected_at",
         )
-
-
-# -- CorrectiveActionSummary
-class CorrectiveActionSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CorrectiveAction
-        fields = [         
-            "description",
-            "status",
-            "evidence_url",
-        ]
 
 
 
@@ -44,11 +33,6 @@ class DefectReleaseValidationSummarySerializer(serializers.ModelSerializer):
 
 # -- Defect
 class DefectSerializer(serializers.ModelSerializer):
-    corrective_actions = CorrectiveActionSummarySerializer(
-        many=True,
-        read_only=True,
-    )
-
     release_validations = DefectReleaseValidationSummarySerializer(
         many=True,
         read_only=True,
@@ -68,23 +52,6 @@ class DefectSerializer(serializers.ModelSerializer):
             "deleted_by",
         ]
 
-
-# -- CorrectiveAction
-class CorrectiveActionSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = CorrectiveAction
-        fields = "__all__"
-
-        read_only_fields = [
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
 
 # -- DefectReleaseValidation
 class DefectReleaseValidationSerializer(serializers.ModelSerializer):

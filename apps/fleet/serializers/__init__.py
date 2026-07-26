@@ -14,7 +14,6 @@ from .carriers import CarrierSerializer
 
 from .defects import (
     DefectSummarySerializer,
-    CorrectiveActionSerializer,
     DefectReleaseValidationSerializer,
     DefectSerializer,
 )

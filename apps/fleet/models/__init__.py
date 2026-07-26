@@ -21,7 +21,6 @@ from .inspections import (
 )
 
 from .defects import (
-    CorrectiveAction,
     Defect,
     DefectReleaseValidation,
 )

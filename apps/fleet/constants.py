@@ -150,53 +150,44 @@ class DefectCreationSource(models.TextChoices):
     SYSTEM = "SYSTEM", "Créé par le système"
     USER = "USER", "Créé par un utilisateur"
 
-# -------------------------------------------------------------------
-# DefectSeverity
-# Gravité du défaut.
-# La gravité n’est pas forcément équivalente au caractère bloquant.
-# -------------------------------------------------------------------
-class DefectSeverity(models.TextChoices):
-    LOW = "LOW", "Low"
-    MEDIUM = "MEDIUM", "Medium"
-    HIGH = "HIGH", "High"
-    CRITICAL = "CRITICAL", "Critical"
-
 
 # -------------------------------------------------------------------
 # DefectStatus
 # Cycle de vie d’un défaut.
 # OPEN = défaut ouvert.
-# CORRECTED = correction déclarée.
 # PENDING_VALIDATION = correction en attente de validation.
 # RELEASED = blocage levé.
 # CLOSED = dossier clôturé.
 # -------------------------------------------------------------------
+# -------------------------------------------------------------------
+# DefectStatus
+# Cycle de vie d’un défaut depuis sa détection jusqu’à sa clôture.
+# -------------------------------------------------------------------
 class DefectStatus(models.TextChoices):
     OPEN = "OPEN", "Open"
-    CORRECTED = "CORRECTED", "Corrected"
     PENDING_VALIDATION = "PENDING_VALIDATION", "Pending validation"
     RELEASED = "RELEASED", "Released"
-    CLOSED = "CLOSED", "Closed"
 
 
 # -------------------------------------------------------------------
-# CorrectiveActionStatus
-# Statut d’une action corrective.
+# DefectReleaseRequestStatus
+# État de traitement d’une demande de levée de défaut.
+# La décision métier est portée séparément par la validation.
 # -------------------------------------------------------------------
-class CorrectiveActionStatus(models.TextChoices):
-    PLANNED = "PLANNED", "Planned"
-    DONE = "DONE", "Done"
+class DefectReleaseRequestStatus(models.TextChoices):
+    PENDING = "PENDING", "Pending"
+    UNDER_REVIEW = "UNDER_REVIEW", "Under review"
+    COMPLETED = "COMPLETED", "Completed"
     CANCELLED = "CANCELLED", "Cancelled"
 
 
 # -------------------------------------------------------------------
 # ValidationDecision
-# Décision de validation, notamment pour la levée d’un blocage.
+# Décision prise après l’examen d’une demande de levée.
 # -------------------------------------------------------------------
 class ValidationDecision(models.TextChoices):
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
-
 
 # -------------------------------------------------------------------
 # MaintenanceType

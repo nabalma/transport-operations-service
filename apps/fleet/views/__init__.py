@@ -6,7 +6,6 @@ from .availabilities import (
 )
 from .carriers import CarrierViewSet
 from .defects import (
-    CorrectiveActionViewSet,
     DefectReleaseValidationViewSet,
     DefectViewSet,
 )
