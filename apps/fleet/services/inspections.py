@@ -2,7 +2,7 @@ from datetime import date
 from decimal import Decimal
 
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
-from apps.fleet.services.defects import create_defect_from_failed_criterion_result
+from apps.fleet.services.defects import create_system_defect
 from apps.fleet.services.membership import _ensure_vehicle_has_active_membership, get_active_vehicle_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
@@ -487,7 +487,7 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
 
     if (
     criterion_result.result == InspectionCriterionResultValue.FAIL and criterion_result.criterion.creates_defect_if_failed ):
-        create_defect_from_failed_criterion_result(criterion_result=criterion_result,user=user)
+        generate_defect_from_failed_criterion_result(criterion_result=criterion_result,user=user)
 
     return criterion_result
 
@@ -865,3 +865,81 @@ def activate_inspection_scoring_policy(*,policy: InspectionScoringPolicyConfigur
     activation_date = timezone.now()
     _retire_active_scoring_policy(membership_type=policy.membership_type,context=policy.context,user=user,retired_at=activation_date,)
     return _activate_scoring_policy(policy=policy,user=user,activated_at=activation_date,)
+
+
+
+
+# _build_defect_description
+# Construit la description d’un défaut généré depuis un résultat d’inspection.
+# Utilise le titre de la section, la référence du critère et le commentaire.
+def _build_defect_description(*, criterion_result):
+    """
+    Return the description of a defect generated from an inspection result.
+    """
+    criterion = criterion_result.criterion
+    section = criterion.section
+    comment = (criterion_result.comment or "").strip()
+
+    description_prefix = (
+        f"{section.title} - Ref. {criterion.reference}"
+    )
+
+    if comment:
+        return f"{description_prefix} : {comment}"
+
+    return (
+        f"{description_prefix} : "
+        "Critère en défaut relevé lors de l’inspection."
+    )
+
+
+
+
+# _ensure_can_create_defect_from_failed_criterion_result
+# Valide qu’un résultat de critère peut générer un défaut.
+def _ensure_can_create_defect_from_failed_criterion_result(*,criterion_result,):
+    """
+    Validate that the criterion result can generate a defect.
+    """
+    if criterion_result.result != InspectionCriterionResultValue.FAIL:
+        raise ValidationError(
+            {
+                "result": (
+                    "Only a failed criterion result can generate a defect."
+                )
+            }
+        )
+
+    if not criterion_result.criterion.creates_defect_if_failed:
+        raise ValidationError(
+            {
+                "criterion": (
+                    "This criterion is not configured to generate a defect."
+                )
+            }
+        )
+
+
+
+
+# generate_defect_from_failed_criterion_result
+# Crée un défaut depuis un résultat de critère en échec.
+# Le résultat doit provenir d’un critère configuré pour générer un défaut.
+def generate_defect_from_failed_criterion_result(*,criterion_result,user,):
+    """
+    Create and return a system-generated defect from a failed criterion result.
+    """
+    _ensure_can_create_defect_from_failed_criterion_result(
+        criterion_result=criterion_result,
+    )
+
+    inspection = criterion_result.inspection
+    description=_build_defect_description(criterion_result=criterion_result,)
+
+    return create_system_defect(
+        vehicle=inspection.vehicle,
+        description=description,
+        user=user,
+        source_inspection=inspection,
+        source_inspection_criterion_result=criterion_result,
+    )

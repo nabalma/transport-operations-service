@@ -299,7 +299,7 @@ class InspectionSerializer(serializers.ModelSerializer):
             "id",
             "context",
             "criterion_results",
-            "status",
+         #   "status",
             "created_at",
             "created_by",
             "updated_at",

@@ -3,7 +3,7 @@ from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission
 from apps.fleet.selectors import _get_inspection_criterion_or_error, _get_vehicle_or_error, list_inspections_with_results
 from apps.fleet.services.inspections import activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet,ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
 from rest_framework.response import Response
@@ -184,6 +184,8 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 # InspectionCriterionResultViewSet
 # Charge directement le critère, sa section et sa version.
 class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+    # Apres la mise en place des regles metiers, nous passerons en readOnlyModelViewSet.
+    http_method_names = ["get", "head", "options", "put", "patch", ]
     queryset = InspectionCriterionResult.objects.select_related(
             "inspection",
             "inspection__inspection_version",
