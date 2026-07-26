@@ -23,7 +23,17 @@ from .inspections import Inspection, InspectionCriterionResult
 #                               ↓
 #                             CLOSED
 
+"""
+| Action métier                     | Statut de la request avant  | Statut de la request après | Statut du defect après | Décision   |
+| --------------------------------- | --------------------------- | -------------------------- | ---------------------- | ---------- |
+| Création du défaut                | —                           | —                          | `OPEN`                 | —          |
+| Soumission d’une demande de levée | —                           | `PENDING`                  | `PENDING_VALIDATION`   | —          |
+| Prise en charge par le validateur | `PENDING`                   | `UNDER_REVIEW`             | `PENDING_VALIDATION`   | —          |
+| Approbation de la demande         | `UNDER_REVIEW`              | `COMPLETED`                | `RELEASED`             | `APPROVED` |
+| Rejet de la demande               | `UNDER_REVIEW`              | `COMPLETED`                | `OPEN`                 | `REJECTED` |
+| Annulation avant décision         | `PENDING` ou `UNDER_REVIEW` | `CANCELLED`                | `OPEN`                 | —          |
 
+"""
 
 # -------------------------------------------------------------------
 # 13-Defect

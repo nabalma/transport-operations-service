@@ -157,24 +157,109 @@ class DefectCreationSource(models.TextChoices):
 # OPEN = défaut ouvert.
 # PENDING_VALIDATION = correction en attente de validation.
 # RELEASED = blocage levé.
-# CLOSED = dossier clôturé.
 # -------------------------------------------------------------------
 # -------------------------------------------------------------------
 # DefectStatus
-# Cycle de vie d’un défaut depuis sa détection jusqu’à sa clôture.
+#
+# Cycle de vie d’un défaut.
+#
+# Le statut du défaut représente son état métier réel.
+# Il ne décrit pas le traitement de la demande de levée.
+#
+# CAS 1 — Demande de levée approuvée
+# OPEN
+#     → Le défaut est actif et bloque potentiellement l’exploitation.
+# PENDING_VALIDATION
+#     → Une demande de levée a été soumise.
+# RELEASED
+#     → La demande a été approuvée.
+#     → Le défaut ne bloque plus l’exploitation.
+#
+# Transition :
+# OPEN → PENDING_VALIDATION → RELEASED
+#
+# CAS 2 — Demande de levée rejetée
+# OPEN
+#     → Le défaut est actif.
+# PENDING_VALIDATION
+#     → Une demande de levée est en cours d’examen.
+# OPEN
+#     → La demande a été rejetée.
+#     → Le défaut reste actif.
+#     → Une nouvelle correction et une nouvelle demande seront nécessaires.
+#
+# Transition :
+# OPEN → PENDING_VALIDATION → OPEN
+#
+# CAS 3 — Demande de levée annulée
+# OPEN
+#     → Le défaut est actif.
+# PENDING_VALIDATION
+#     → Une demande de levée a été soumise.
+# OPEN
+#     → La demande a été annulée sans décision.
+#     → Le défaut reste actif.
+#
+# Transition :
+# OPEN → PENDING_VALIDATION → OPEN
+#
+# Règle importante :
+# RELEASED ne peut être atteint qu’après une validation APPROVED.
 # -------------------------------------------------------------------
 class DefectStatus(models.TextChoices):
+    """Définit les états métier d’un défaut."""
+
     OPEN = "OPEN", "Open"
     PENDING_VALIDATION = "PENDING_VALIDATION", "Pending validation"
     RELEASED = "RELEASED", "Released"
 
-
 # -------------------------------------------------------------------
 # DefectReleaseRequestStatus
-# État de traitement d’une demande de levée de défaut.
-# La décision métier est portée séparément par la validation.
+#
+# Cycle de vie d’une demande de levée de défaut.
+#
+# La demande représente le traitement administratif et métier de la
+# requête de levée. Son statut indique uniquement où en est son traitement.
+#
+# CAS 1 — Demande approuvée
+# PENDING
+#     → La demande vient d’être soumise.
+# UNDER_REVIEW
+#     → La demande est en cours d’examen par un validateur.
+# COMPLETED
+#     → L’examen est terminé.
+#     → Une DefectReleaseValidation est créée avec decision=APPROVED.
+#
+# Transition :
+# PENDING → UNDER_REVIEW → COMPLETED
+#
+# CAS 2 — Demande rejetée
+# PENDING
+#     → La demande vient d’être soumise.
+# UNDER_REVIEW
+#     → La demande est en cours d’examen par un validateur.
+# COMPLETED
+#     → L’examen est terminé.
+#     → Une DefectReleaseValidation est créée avec decision=REJECTED.
+#
+# Transition :
+# PENDING → UNDER_REVIEW → COMPLETED
+#
+# CAS 3 — Demande annulée
+# PENDING
+#     → La demande a été soumise mais n’a pas encore été décidée.
+# CANCELLED
+#     → La demande est abandonnée sans décision de validation.
+#
+# Transition :
+# PENDING → CANCELLED
+#
+# Selon les règles métier, une annulation depuis UNDER_REVIEW peut être
+# interdite afin d’éviter l’abandon d’une demande déjà en cours d’examen.
 # -------------------------------------------------------------------
 class DefectReleaseRequestStatus(models.TextChoices):
+    """Définit les états de traitement d’une demande de levée de défaut."""
+
     PENDING = "PENDING", "Pending"
     UNDER_REVIEW = "UNDER_REVIEW", "Under review"
     COMPLETED = "COMPLETED", "Completed"
@@ -183,9 +268,26 @@ class DefectReleaseRequestStatus(models.TextChoices):
 
 # -------------------------------------------------------------------
 # ValidationDecision
-# Décision prise après l’examen d’une demande de levée.
+#
+# Décision prise à la fin de l’examen d’une demande de levée.
+#
+# APPROVED
+#     → La demande est acceptée.
+#     → DefectReleaseRequest.status devient COMPLETED.
+#     → Defect.status devient RELEASED.
+#
+# REJECTED
+#     → La demande est refusée.
+#     → DefectReleaseRequest.status devient COMPLETED.
+#     → Defect.status revient à OPEN.
+#
+# La décision ne remplace pas le statut de la demande :
+# - le statut indique où en est le traitement ;
+# - la décision indique le résultat de ce traitement.
 # -------------------------------------------------------------------
 class ValidationDecision(models.TextChoices):
+    """Définit les décisions possibles après examen d’une demande de levée."""
+
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
 
