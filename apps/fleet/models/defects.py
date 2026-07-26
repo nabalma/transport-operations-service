@@ -145,8 +145,6 @@ class DefectReleaseValidation(TimeStampedSoftDeletableModel):
         DefectReleaseRequest,
         on_delete=models.PROTECT,
         related_name="validation",
-        null=True,
-        blank=True
     )
 
     # Décision finale prise par le validateur.
