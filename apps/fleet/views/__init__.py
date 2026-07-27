@@ -6,6 +6,7 @@ from .availabilities import (
 )
 from .carriers import CarrierViewSet
 from .defects import (
+    DefectReleaseRequestViewSet,
     DefectReleaseValidationViewSet,
     DefectViewSet,
 )
@@ -36,6 +37,7 @@ from .vehicles import (
 __all__ = [
     "CarrierViewSet",
     "CorrectiveActionViewSet",
+    "DefectReleaseRequestViewSet"
     "DefectReleaseValidationViewSet",
     "DefectViewSet",
     "DowntimeViewSet",

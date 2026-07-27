@@ -22,6 +22,7 @@ from .inspections import (
 
 from .defects import (
     Defect,
+    DefectReleaseRequest,
     DefectReleaseValidation,
 )
 
@@ -59,6 +60,7 @@ __all__ = [
     "VehicleMembershipRequest",
     "CorrectiveAction",
     "Defect",
+    "DefectReleaseRequest"
     "DefectReleaseValidation",
      "Downtime",
     "Maintenance",

@@ -14,6 +14,8 @@ from .carriers import CarrierSerializer
 
 from .defects import (
     DefectSummarySerializer,
+    DefectReleaseRequestSerializer,
+    DefectReleaseRequestSubmitSerializer,
     DefectReleaseValidationSerializer,
     DefectSerializer,
 )
@@ -57,6 +59,8 @@ __all__ = [
     "CorrectiveActionSerializer",
     "CorrectiveActionSummarySerializer",
     "CreateInspectionSerializer",
+    "DefectReleaseRequestSubmitSerializer",
+    "DefectReleaseRequestSerializer",
     "DefectReleaseValidationSerializer",
     "DefectReleaseValidationSummarySerializer",
     "DefectSerializer",

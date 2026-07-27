@@ -1,4 +1,4 @@
-from apps.fleet.views import CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet
+from apps.fleet.views import CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -17,6 +17,7 @@ router.register("inspection-criteria",InspectionCriterionViewSet,basename="inspe
 router.register("inspections",InspectionViewSet,basename="inspection",)
 router.register("inspection-criterion-results",InspectionCriterionResultViewSet,basename="inspection-criterion-result",)
 router.register("defects",DefectViewSet,basename="defect",)
+router.register("defect-release-requests",DefectReleaseRequestViewSet,basename="defect-release-request",)
 router.register("defect-release-validations",DefectReleaseValidationViewSet,basename="defect-release-validation",)
 router.register("maintenances", MaintenanceViewSet,basename="maintenance",)
 router.register("downtimes",DowntimeViewSet,basename="downtime",)

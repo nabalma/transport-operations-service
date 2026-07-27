@@ -1,6 +1,6 @@
 from django.utils import timezone
 import uuid
-
+from django.conf import settings
 from django.db import models
 from apps.fleet.constants import DefectCreationSource, DefectReleaseRequestStatus, DefectStatus, ValidationDecision 
 from django.core.exceptions import ValidationError
@@ -115,9 +115,11 @@ class DefectReleaseRequest(TimeStampedSoftDeletableModel):
     correction_summary = models.TextField()
 
     # Personne ou entité ayant soumis la demande.
-    submitted_by = models.CharField(
-        max_length=255,
-    )
+    submitted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.PROTECT,
+        related_name="submitted_defect_release_requests",
+)
 
     # Date et heure de soumission de la demande.
     submitted_at = models.DateTimeField(
@@ -164,9 +166,11 @@ class DefectReleaseValidation(TimeStampedSoftDeletableModel):
     )
 
     # Personne ou autorité ayant effectué la validation.
-    validated_by = models.CharField(
-        max_length=255,
-    )
+    validated_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.PROTECT,
+    related_name="validated_defect_release_requests",
+)
 
     # Date et heure auxquelles la décision a été prise.
     validated_at = models.DateTimeField(

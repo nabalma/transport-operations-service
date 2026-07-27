@@ -153,13 +153,6 @@ class DefectCreationSource(models.TextChoices):
 
 # -------------------------------------------------------------------
 # DefectStatus
-# Cycle de vie d’un défaut.
-# OPEN = défaut ouvert.
-# PENDING_VALIDATION = correction en attente de validation.
-# RELEASED = blocage levé.
-# -------------------------------------------------------------------
-# -------------------------------------------------------------------
-# DefectStatus
 #
 # Cycle de vie d’un défaut.
 #
@@ -218,50 +211,37 @@ class DefectStatus(models.TextChoices):
 #
 # Cycle de vie d’une demande de levée de défaut.
 #
-# La demande représente le traitement administratif et métier de la
-# requête de levée. Son statut indique uniquement où en est son traitement.
-#
 # CAS 1 — Demande approuvée
 # PENDING
 #     → La demande vient d’être soumise.
-# UNDER_REVIEW
-#     → La demande est en cours d’examen par un validateur.
 # COMPLETED
-#     → L’examen est terminé.
 #     → Une DefectReleaseValidation est créée avec decision=APPROVED.
 #
 # Transition :
-# PENDING → UNDER_REVIEW → COMPLETED
+# PENDING → COMPLETED
 #
 # CAS 2 — Demande rejetée
 # PENDING
 #     → La demande vient d’être soumise.
-# UNDER_REVIEW
-#     → La demande est en cours d’examen par un validateur.
 # COMPLETED
-#     → L’examen est terminé.
 #     → Une DefectReleaseValidation est créée avec decision=REJECTED.
 #
 # Transition :
-# PENDING → UNDER_REVIEW → COMPLETED
+# PENDING → COMPLETED
 #
 # CAS 3 — Demande annulée
 # PENDING
-#     → La demande a été soumise mais n’a pas encore été décidée.
+#     → La demande a été soumise mais aucune décision n’a été prise.
 # CANCELLED
-#     → La demande est abandonnée sans décision de validation.
+#     → La demande est abandonnée sans validation.
 #
 # Transition :
 # PENDING → CANCELLED
-#
-# Selon les règles métier, une annulation depuis UNDER_REVIEW peut être
-# interdite afin d’éviter l’abandon d’une demande déjà en cours d’examen.
 # -------------------------------------------------------------------
 class DefectReleaseRequestStatus(models.TextChoices):
     """Définit les états de traitement d’une demande de levée de défaut."""
 
     PENDING = "PENDING", "Pending"
-    UNDER_REVIEW = "UNDER_REVIEW", "Under review"
     COMPLETED = "COMPLETED", "Completed"
     CANCELLED = "CANCELLED", "Cancelled"
 

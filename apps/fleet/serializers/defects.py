@@ -1,6 +1,6 @@
 
 from rest_framework import serializers
-from apps.fleet.models import Defect,DefectReleaseValidation
+from apps.fleet.models import Defect,DefectReleaseValidation,DefectReleaseRequest
 
 
 # -- DefectSummary
@@ -69,4 +69,36 @@ class DefectReleaseValidationSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
+
+# DefectReleaseRequestSubmitSerializer
+# Valide les données nécessaires à la soumission d’une demande de levée.
+class DefectReleaseRequestSubmitSerializer(serializers.Serializer):
+    """
+    Représente les données fournies par le client lors d’une soumission.
+    """
+
+    correction_summary = serializers.CharField(
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+
+# DefectReleaseRequestSerializer
+# Sérialise une demande de levée de défaut.
+class DefectReleaseRequestSerializer(serializers.ModelSerializer):
+    """
+    Représente une demande de levée de défaut dans les réponses API.
+    """
+
+    class Meta:
+        model = DefectReleaseRequest
+        fields = (
+            "id",
+            "defect",
+            "correction_summary",
+            "submitted_by",
+            "submitted_at",
+            "status",
+        )
+        read_only_fields = fields
 

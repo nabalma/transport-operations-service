@@ -113,10 +113,7 @@ def list_defects_with_source_and_resolution() -> QuerySet[Defect]:
             "source_inspection",
             "source_inspection_criterion_result",
         )
-        .prefetch_related(
-            "corrective_actions",
-            "release_validations",
-        )
+      
     )
 
 
