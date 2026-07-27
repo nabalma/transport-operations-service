@@ -102,3 +102,25 @@ class DefectReleaseRequestSerializer(serializers.ModelSerializer):
         )
         read_only_fields = fields
 
+
+
+from apps.fleet.constants import ValidationDecision
+
+
+# DefectReleaseValidationInputSerializer
+# Valide les données nécessaires à la décision finale.
+class DefectReleaseValidationInputSerializer(serializers.Serializer):
+    """
+    Représente les données reçues pour valider une demande de levée.
+    """
+
+    decision = serializers.ChoiceField(
+        choices=ValidationDecision.choices,
+    )
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        trim_whitespace=True,
+    )
+

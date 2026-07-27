@@ -1,8 +1,8 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
-from apps.fleet.constants import (DefectCreationSource, DefectReleaseRequestStatus, DefectStatus,)
-from apps.fleet.models import Defect, DefectReleaseRequest
+from apps.fleet.constants import (DefectCreationSource, DefectReleaseRequestStatus, DefectStatus, ValidationDecision,)
+from apps.fleet.models import Defect, DefectReleaseRequest,DefectReleaseValidation
 
 
 # -------------------------------------------------------------------
@@ -126,7 +126,6 @@ def _mark_defect_as_pending_validation(
     )
 
 
-
 # submit_defect_release_request
 # Soumet une demande de levée pour un défaut corrigé.
 @transaction.atomic
@@ -165,3 +164,195 @@ def submit_defect_release_request(
     )
 
     return release_request
+
+
+# _ensure_can_validate_defect_release_request
+# Vérifie qu’une demande de levée peut recevoir une décision.
+def _ensure_can_validate_defect_release_request(
+    *,
+    release_request,
+    decision: str,
+    comment: str | None,
+) -> None:
+    """
+    Valide les règles métier avant la création d’une décision finale.
+    """
+    if release_request.is_deleted:
+        raise ValidationError(
+            {
+                "release_request": (
+                    "A deleted release request cannot be validated."
+                )
+            }
+        )
+
+    if release_request.status != DefectReleaseRequestStatus.PENDING:
+        raise ValidationError(
+            {
+                "status": (
+                    "Only a pending release request can be validated."
+                )
+            }
+        )
+
+    if decision not in ValidationDecision.values:
+        raise ValidationError(
+            {
+                "decision": (
+                    "The decision must be APPROVED or REJECTED."
+                )
+            }
+        )
+
+    if (
+        decision == ValidationDecision.REJECTED
+        and (not comment or not comment.strip())
+    ):
+        raise ValidationError(
+            {
+                "comment": (
+                    "A comment is required when the request is rejected."
+                )
+            }
+        )
+
+    if release_request.defect.status != DefectStatus.PENDING_VALIDATION:
+        raise ValidationError(
+            {
+                "defect": (
+                    "The related defect must be pending validation."
+                )
+            }
+        )
+
+    validation_exists = DefectReleaseValidation.objects.filter(
+        release_request=release_request,
+    ).exists()
+
+    if validation_exists:
+        raise ValidationError(
+            {
+                "release_request": (
+                    "This release request has already been validated."
+                )
+            }
+        )
+
+
+# _mark_release_request_as_completed
+# Marque une demande de levée comme terminée.
+def _mark_release_request_as_completed(
+    *,
+    release_request,
+    user,
+) -> None:
+    """
+    Met à jour la demande de levée après une décision finale.
+    """
+    release_request.status = DefectReleaseRequestStatus.COMPLETED
+    release_request.updated_by = user
+
+    release_request.save(
+        update_fields=[
+            "status",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+
+
+# _apply_validation_decision_to_defect
+# Met à jour le défaut selon la décision de validation.
+def _apply_validation_decision_to_defect(
+    *,
+    defect,
+    decision: str,
+    user,
+) -> None:
+    """
+    Applique au défaut le statut correspondant à la décision finale.
+    """
+    if decision == ValidationDecision.APPROVED:
+        defect.status = DefectStatus.RELEASED
+    else:
+        defect.status = DefectStatus.OPEN
+
+    defect.updated_by = user
+
+    defect.save(
+        update_fields=[
+            "status",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+
+
+
+# _create_defect_release_validation
+# Crée la décision finale liée à une demande de levée.
+def _create_defect_release_validation(
+    *,
+    release_request,
+    decision: str,
+    validated_by,
+    comment: str | None,
+) -> DefectReleaseValidation:
+    """
+    Crée et retourne la validation associée à la demande de levée.
+    """
+    return DefectReleaseValidation.objects.create(
+        release_request=release_request,
+        decision=decision,
+        validated_by=validated_by,
+        comment=comment.strip() if comment else None,
+        created_by=validated_by,
+        updated_by=validated_by,
+    )
+
+
+# validate_defect_release_request
+# Enregistre une décision finale sur une demande de levée.
+@transaction.atomic
+def validate_defect_release_request(
+    *,
+    release_request,
+    decision: str,
+    validated_by,
+    comment: str | None = None,
+) -> DefectReleaseValidation:
+    """
+    Valide une demande de levée et met à jour son défaut associé.
+    """
+    release_request = (
+        DefectReleaseRequest.objects
+        .select_for_update()
+        .select_related("defect")
+        .get(pk=release_request.pk)
+    )
+
+    _ensure_can_validate_defect_release_request(
+        release_request=release_request,
+        decision=decision,
+        comment=comment,
+    )
+
+    validation = _create_defect_release_validation(
+        release_request=release_request,
+        decision=decision,
+        validated_by=validated_by,
+        comment=comment,
+    )
+
+    _mark_release_request_as_completed(
+        release_request=release_request,
+        user=validated_by,
+    )
+
+    _apply_validation_decision_to_defect(
+        defect=release_request.defect,
+        decision=decision,
+        user=validated_by,
+    )
+
+    return validation

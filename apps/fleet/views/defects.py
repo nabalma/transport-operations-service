@@ -3,13 +3,13 @@
 
 from rest_framework import status
 from rest_framework.response import Response
-from apps.fleet.services.defects import submit_defect_release_request
+from apps.fleet.services.defects import submit_defect_release_request, validate_defect_release_request
 
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.selectors import list_defects_with_source_and_resolution
 from rest_framework.viewsets import ModelViewSet,ReadOnlyModelViewSet
 from apps.fleet.models import DefectReleaseValidation,DefectReleaseRequest
-from apps.fleet.serializers import DefectReleaseValidationSerializer, DefectSerializer,DefectReleaseRequestSubmitSerializer,DefectReleaseRequestSerializer
+from apps.fleet.serializers import DefectReleaseValidationSerializer, DefectSerializer,DefectReleaseRequestSubmitSerializer,DefectReleaseRequestSerializer,DefectReleaseValidationInputSerializer
 from rest_framework.decorators import action
 
 
@@ -74,6 +74,40 @@ class DefectReleaseRequestViewSet(ReadOnlyModelViewSet):
         .order_by("-submitted_at")
     )
 
+        # validate
+    # Enregistre la décision finale sur une demande de levée.
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="validate",
+        serializer_class=DefectReleaseValidationInputSerializer,
+    )
+    def validate(self, request, pk=None):
+        """
+        Valide la demande de levée sélectionnée.
+        """
+        release_request = self.get_object()
+
+        input_serializer = self.get_serializer(
+            data=request.data,
+        )
+        input_serializer.is_valid(raise_exception=True)
+
+        validation = validate_defect_release_request(
+            release_request=release_request,
+            decision=input_serializer.validated_data["decision"],
+            comment=input_serializer.validated_data.get("comment"),
+            validated_by=request.user,
+        )
+
+        output_serializer = DefectReleaseValidationSerializer(
+            validation,
+        )
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 
