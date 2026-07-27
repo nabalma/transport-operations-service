@@ -3,7 +3,7 @@
 
 from rest_framework import status
 from rest_framework.response import Response
-from apps.fleet.services.defects import submit_defect_release_request, validate_defect_release_request
+from apps.fleet.services import submit_defect_release_request, validate_defect_release_request
 
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.selectors import list_defects_with_source_and_resolution

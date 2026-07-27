@@ -2,7 +2,7 @@
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import InspectionConfigurationPermission, InspectionPermission
 from apps.fleet.selectors import _get_inspection_criterion_or_error, _get_vehicle_or_error, list_inspections_with_results
-from apps.fleet.services.inspections import activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
+from apps.fleet.services import activate_inspection_scoring_policy, build_blank_inspection_sheet, cancel_inspection, complete_inspection, create_inspection, create_inspection_version, record_criterion_result, update_inspection_version_status
 from rest_framework.viewsets import ModelViewSet,ReadOnlyModelViewSet
 from rest_framework.decorators import action
 from rest_framework import status
