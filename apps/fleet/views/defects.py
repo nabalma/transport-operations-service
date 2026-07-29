@@ -1,6 +1,5 @@
 
 
-
 from rest_framework import status
 from rest_framework.response import Response
 from apps.fleet.services import submit_defect_release_request, validate_defect_release_request

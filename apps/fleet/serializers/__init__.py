@@ -20,6 +20,12 @@ from .defects import (
     DefectReleaseValidationSerializer,
     DefectSerializer,
 )
+
+from .maintenances import (
+    MaintenancePolicySerializer,
+)
+
+
 from .evidences import (
     EvidenceSerializer,
     EvidenceSummarySerializer,
@@ -42,7 +48,6 @@ from .inspections import (
 )
 from .operations import (
     DowntimeSerializer,
-    MaintenanceSerializer,
     ReturnToServiceSerializer,
 )
 from .vehicles import (
@@ -67,6 +72,7 @@ __all__ = [
     "DefectReleaseValidationSummarySerializer",
     "DefectSerializer",
     "DefectSummarySerializer",
+    "MaintenancePolicySerializer",
     "DowntimeSerializer",
     "DowntimeSummarySerializer",
     "EvidenceSerializer",

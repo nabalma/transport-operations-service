@@ -2,19 +2,9 @@ from rest_framework import serializers
 
 from apps.fleet.models import (
     Downtime,
-    Maintenance,
     ReturnToService,
 )
 
-
-class MaintenanceSummarySerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Maintenance
-        fields = [
-            "scope",
-            "type",
-            "status",
-        ]
 
 
 class DowntimeSummarySerializer(serializers.ModelSerializer):
@@ -35,21 +25,6 @@ class ReturnToServiceSummarySerializer(serializers.ModelSerializer):
             "decision",
         ]
 
-
-class MaintenanceSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Maintenance
-        fields = "__all__"
-        read_only_fields = [
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
 
 
 class DowntimeSerializer(serializers.ModelSerializer):

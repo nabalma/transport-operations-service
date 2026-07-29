@@ -1,4 +1,4 @@
-from apps.fleet.views import CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet, MaintenanceViewSet, NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
+from apps.fleet.views import MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -19,7 +19,7 @@ router.register("inspection-criterion-results",InspectionCriterionResultViewSet,
 router.register("defects",DefectViewSet,basename="defect",)
 router.register("defect-release-requests",DefectReleaseRequestViewSet,basename="defect-release-request",)
 router.register("defect-release-validations",DefectReleaseValidationViewSet,basename="defect-release-validation",)
-router.register("maintenances", MaintenanceViewSet,basename="maintenance",)
+router.register("maintenance-policies",MaintenancePolicyViewSet,basename="maintenance-policy",)
 router.register("downtimes",DowntimeViewSet,basename="downtime",)
 router.register("return-to-services",ReturnToServiceViewSet,basename="return-to-service",)
 router.register("vehicle-availability-evaluations",VehicleAvailabilityEvaluationViewSet,basename="vehicle-availability-evaluation",)

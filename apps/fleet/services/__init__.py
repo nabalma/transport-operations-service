@@ -15,6 +15,12 @@ from .inspections import (
     activate_inspection_scoring_policy,
 )
 
+from .maintenance_policies import (
+    create_maintenance_policy,
+)
+
+
+
 from .membership import (
     create_vehicle_membership_request,
     submit_vehicle_membership_request,
@@ -39,6 +45,7 @@ __all__ = [
     "complete_inspection",
     "cancel_inspection",
     "record_criterion_result",
+    "create_maintenance_policy"
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",

@@ -3,42 +3,11 @@ import uuid
 
 from django.db import models
 
-from apps.fleet.constants import DowntimeSourceType, DowntimeStatus,MaintenanceStatus, MaintenanceType,ReturnToServiceDecision, ReturnToServiceSourceType, VehicleScope
+from apps.fleet.constants import DowntimeSourceType, DowntimeStatus,ReturnToServiceDecision, ReturnToServiceSourceType
 
 
 from .base import TimeStampedSoftDeletableModel
 from .vehicles import Vehicle
-
-# -------------------------------------------------------------------
-# 16-Maintenance
-# Maintenance préventive ou corrective.
-# Le blocage métier est porté par Defect, pas par Maintenance.
-# -------------------------------------------------------------------
-class Maintenance(TimeStampedSoftDeletableModel):
-    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
-
-    vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="maintenances")
-
-    # Partie concernée par la maintenance.
-    scope = models.CharField(max_length=20, choices=VehicleScope.choices)
-
-    # Type de maintenance : préventive ou corrective.
-    type = models.CharField(max_length=20, choices=MaintenanceType.choices)
-
-    # Statut de la maintenance.
-    status = models.CharField(max_length=20, choices=MaintenanceStatus.choices, default=MaintenanceStatus.PLANNED)
-
-    planned_start_date = models.DateTimeField(blank=True, null=True)
-    planned_end_date = models.DateTimeField(blank=True, null=True)
-    actual_start_date = models.DateTimeField(blank=True, null=True)
-    actual_end_date = models.DateTimeField(blank=True, null=True)
-
-    # Description libre de l’intervention.
-    description = models.TextField(blank=True, null=True)
-
-    def __str__(self):
-        return f"{self.vehicle} - {self.type} - {self.status}"
-
 
 # -------------------------------------------------------------------
 # 17-Downtime

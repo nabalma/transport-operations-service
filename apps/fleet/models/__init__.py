@@ -26,9 +26,14 @@ from .defects import (
     DefectReleaseValidation,
 )
 
+from .maintenances import (
+    MaintenancePolicy,
+    MaintenanceSchedule,
+    MaintenanceWorkOrder,
+)
+
 from .operations import (
     Downtime,
-    Maintenance,
     ReturnToService,
 )
 
@@ -58,12 +63,13 @@ __all__ = [
     "VehicleDocument",
     "VehicleMembership",
     "VehicleMembershipRequest",
-    "CorrectiveAction",
     "Defect",
-    "DefectReleaseRequest"
+    "DefectReleaseRequest",
     "DefectReleaseValidation",
+     "MaintenancePolicy",
+    "MaintenanceSchedule",
+    "MaintenanceWorkOrder",
      "Downtime",
-    "Maintenance",
     "ReturnToService",
      "NextTripEligibilityEvaluation",
     "NextTripEligibilityEvaluationReason",

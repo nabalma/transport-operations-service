@@ -10,6 +10,9 @@ from .defects import (
     DefectReleaseValidationViewSet,
     DefectViewSet,
 )
+from .maintenances import (
+    MaintenancePolicyViewSet,
+)
 from .evidences import EvidenceViewSet
 from .inspections import (
     InspectionChapterViewSet,
@@ -22,7 +25,6 @@ from .inspections import (
 )
 from .operations import (
     DowntimeViewSet,
-    MaintenanceViewSet,
     ReturnToServiceViewSet,
 )
 from .vehicles import (
@@ -36,8 +38,8 @@ from .vehicles import (
 
 __all__ = [
     "CarrierViewSet",
-    "CorrectiveActionViewSet",
-    "DefectReleaseRequestViewSet"
+   "MaintenancePolicyViewSet",
+    "DefectReleaseRequestViewSet",
     "DefectReleaseValidationViewSet",
     "DefectViewSet",
     "DowntimeViewSet",
@@ -49,7 +51,6 @@ __all__ = [
     "InspectionSectionViewSet",
     "InspectionVersionViewSet",
     "InspectionViewSet",
-    "MaintenanceViewSet",
     "NextTripEligibilityEvaluationReasonViewSet",
     "NextTripEligibilityEvaluationViewSet",
     "ReturnToServiceViewSet",

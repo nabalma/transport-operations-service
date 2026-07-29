@@ -271,24 +271,28 @@ class ValidationDecision(models.TextChoices):
     APPROVED = "APPROVED", "Approved"
     REJECTED = "REJECTED", "Rejected"
 
-# -------------------------------------------------------------------
-# MaintenanceType
-# Type de maintenance.
-# -------------------------------------------------------------------
-class MaintenanceType(models.TextChoices):
-    PREVENTIVE = "PREVENTIVE", "Preventive"
+# Définit les statuts persistants d’une planification de maintenance.
+# Ces statuts décrivent uniquement le cycle de vie métier.
+# Les états DUE et OVERDUE restent calculés.
+class MaintenanceScheduleStatus(models.TextChoices):
+    ACTIVE = "ACTIVE", "Active"
+    FULFILLED = "FULFILLED", "Fulfilled"
+    CANCELLED = "CANCELLED", "Cancelled"
+
+
+# Définit la nature de l’intervention de maintenance.
+# Une intervention préventive provient d’une planification.
+# Une intervention corrective peut provenir d’un défaut.
+class MaintenanceWorkOrderKind(models.TextChoices):
+    PREVENTIVE = "PREVENTIVE", "Préventive"
     CORRECTIVE = "CORRECTIVE", "Corrective"
 
+class MaintenanceWorkOrderStatus(models.TextChoices):
+    PLANNED = "PLANNED", "Planifié"
+    IN_PROGRESS = "IN_PROGRESS", "En cours"
+    COMPLETED = "COMPLETED", "Terminé"
+    CANCELLED = "CANCELLED", "Annulé"
 
-# -------------------------------------------------------------------
-# MaintenanceStatus
-# Cycle de vie d’une maintenance.
-# -------------------------------------------------------------------
-class MaintenanceStatus(models.TextChoices):
-    PLANNED = "PLANNED", "Planned"
-    IN_PROGRESS = "IN_PROGRESS", "In progress"
-    COMPLETED = "COMPLETED", "Completed"
-    CANCELLED = "CANCELLED", "Cancelled"
 
 
 # -------------------------------------------------------------------
