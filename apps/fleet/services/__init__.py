@@ -19,6 +19,9 @@ from .maintenance_policies import (
     create_maintenance_policy,
 )
 
+from .maintenance_work_orders import (
+    create_maintenance_component,
+)
 
 
 from .membership import (
@@ -45,7 +48,8 @@ __all__ = [
     "complete_inspection",
     "cancel_inspection",
     "record_criterion_result",
-    "create_maintenance_policy"
+    "create_maintenance_policy",
+    "create_maintenance_component",
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",

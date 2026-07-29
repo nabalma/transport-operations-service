@@ -5,9 +5,123 @@ import uuid
 from django.db import models
 from django.db.models import Q
 
-from apps.fleet.constants import MaintenanceScheduleStatus, MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus
+from apps.fleet.constants import MaintenanceScheduleStatus, MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus, VehicleScope
 
 from .base import TimeStampedSoftDeletableModel
+
+
+
+
+# -------------------------------------------------------------------
+# MaintenanceComponent
+# Catalogue des composants pouvant faire l'objet d'une maintenance.
+# Les composants sont rattachés à un scope véhicule.
+# -------------------------------------------------------------------
+#
+# Représente un composant standard du véhicule pouvant être utilisé
+# dans un ordre de travail.
+#
+class MaintenanceComponent(TimeStampedSoftDeletableModel):
+    """
+    Catalogue des composants de maintenance.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+    )
+
+    name = models.CharField(
+        max_length=150,
+    )
+
+    scope = models.CharField(
+        max_length=20,
+        choices=VehicleScope.choices,
+    )
+
+    description = models.TextField(
+        blank=True,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    class Meta:
+        ordering = [
+            "scope",
+            "name",
+        ]
+
+    def __str__(self):
+        return f"{self.scope} - {self.name}"
+
+
+
+# -------------------------------------------------------------------
+# MaintenanceWorkOrderItem
+#
+# Représente une intervention précise à l’intérieur d’un ordre de travail.
+#
+# Un ordre de travail peut contenir plusieurs éléments.
+# Chaque élément concerne un composant de maintenance précis.
+#
+# Exemple :
+# - pneus ;
+# - freins ;
+# - moteur ;
+# - trou d’homme ;
+# - vanne.
+#
+# Le scope n’est pas stocké directement sur ce modèle.
+# Il est déterminé à partir du composant associé afin d’éviter
+# les incohérences entre le composant et sa partie du véhicule.
+# -------------------------------------------------------------------
+class MaintenanceWorkOrderItem(TimeStampedSoftDeletableModel):
+    """
+    Représente une intervention précise dans un ordre de travail.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    work_order = models.ForeignKey(
+        "fleet.MaintenanceWorkOrder",
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    component = models.ForeignKey(
+        "fleet.MaintenanceComponent",
+        on_delete=models.PROTECT,
+        related_name="work_order_items",
+    )
+
+    description = models.TextField(
+        blank=True,
+    )
+
+    class Meta:
+        ordering = [
+            "created_at",
+        ]
+
+    def __str__(self):
+        return f"{self.work_order} - {self.component}"
+
+
+
+
 
 # Définit les règles configurables d’un programme de maintenance préventive.
 # Elle précise les intervalles et les tolérances applicables.
@@ -149,21 +263,46 @@ class MaintenanceSchedule(TimeStampedSoftDeletableModel):
 
 
 
-# Représente une intervention de maintenance réellement exécutée.
-# Elle peut être préventive ou corrective selon son origine.
-# Elle reste distincte de l’immobilisation et du retour en service.
+# -------------------------------------------------------------------
+# MaintenanceWorkOrder
+#
+# Représente un ordre de travail de maintenance.
+#
+# Un ordre de travail regroupe une ou plusieurs interventions
+# MaintenanceWorkOrderItem exécutées sur un même véhicule.
+#
+# Il peut être :
+# - préventif, lorsqu’il provient d’une MaintenanceSchedule ;
+# - correctif, lorsqu’il est créé à la suite d’un défaut ou d’un besoin
+#   de réparation.
+#
+# Règles métier :
+#
+# PREVENTIVE
+# - schedule obligatoire ;
+# - defect interdit.
+#
+# CORRECTIVE
+# - schedule interdit ;
+# - defect facultatif.
+#
+# Son cycle de vie est indépendant des immobilisations
+# et des décisions de remise en service.
+# -------------------------------------------------------------------
 class MaintenanceWorkOrder(TimeStampedSoftDeletableModel):
     """
-    Ordre de travail associé à une intervention réelle.
-    Son cycle de vie est géré par les services métier.
+    Représente un ordre de travail de maintenance.
+
+    Les interventions précises sont enregistrées dans les
+    MaintenanceWorkOrderItem associés.
     """
 
     id = models.UUIDField(
         primary_key=True,
         default=uuid.uuid4,
         editable=False,
-        )
-    
+    )
+
     vehicle = models.ForeignKey(
         "fleet.Vehicle",
         on_delete=models.PROTECT,
@@ -181,8 +320,13 @@ class MaintenanceWorkOrder(TimeStampedSoftDeletableModel):
         default=MaintenanceWorkOrderStatus.PLANNED,
     )
 
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
+    title = models.CharField(
+        max_length=255,
+    )
+
+    description = models.TextField(
+        blank=True,
+    )
 
     schedule = models.ForeignKey(
         "fleet.MaintenanceSchedule",
@@ -200,33 +344,66 @@ class MaintenanceWorkOrder(TimeStampedSoftDeletableModel):
         blank=True,
     )
 
-    planned_start_at = models.DateTimeField(null=True, blank=True)
-    planned_end_at = models.DateTimeField(null=True, blank=True)
+    planned_start_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
-    started_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
-    cancelled_at = models.DateTimeField(null=True, blank=True)
+    planned_end_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
 
-    completion_notes = models.TextField(blank=True)
-    cancellation_reason = models.TextField(blank=True)
+    started_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    completed_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    cancelled_at = models.DateTimeField(
+        null=True,
+        blank=True,
+    )
+
+    completion_notes = models.TextField(
+        blank=True,
+    )
+
+    cancellation_reason = models.TextField(
+        blank=True,
+    )
 
     class Meta:
-        ordering = ("-created_at",)
+        ordering = (
+            "-created_at",
+        )
+
         constraints = [
             models.CheckConstraint(
                 condition=(
                     (
-                        Q(kind=MaintenanceWorkOrderKind.PREVENTIVE)
-                        & Q(schedule__isnull=False)
+                        Q(
+                            kind=MaintenanceWorkOrderKind.PREVENTIVE,
+                            schedule__isnull=False,
+                            defect__isnull=True,
+                        )
                     )
-                    | (
-                        Q(kind=MaintenanceWorkOrderKind.CORRECTIVE)
-                        & Q(schedule__isnull=True)
+                    |
+                    (
+                        Q(
+                            kind=MaintenanceWorkOrderKind.CORRECTIVE,
+                            schedule__isnull=True,
+                        )
                     )
                 ),
-                name="maintenance_work_order_schedule_matches_kind",
+                name="maintenance_work_order_origin_matches_kind",
             ),
-            ]
+        ]
 
     def __str__(self) -> str:
         return f"{self.title} - {self.vehicle}"
+

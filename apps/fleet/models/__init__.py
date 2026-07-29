@@ -27,10 +27,14 @@ from .defects import (
 )
 
 from .maintenances import (
+    MaintenanceComponent,
+    MaintenanceWorkOrderItem,
     MaintenancePolicy,
     MaintenanceSchedule,
     MaintenanceWorkOrder,
+    
 )
+
 
 from .operations import (
     Downtime,
@@ -66,6 +70,8 @@ __all__ = [
     "Defect",
     "DefectReleaseRequest",
     "DefectReleaseValidation",
+   " MaintenanceComponent",
+   "MaintenanceWorkOrderItem",
      "MaintenancePolicy",
     "MaintenanceSchedule",
     "MaintenanceWorkOrder",
