@@ -12,6 +12,8 @@ from .defects import (
 )
 from .maintenances import (
     MaintenancePolicyViewSet,
+    MaintenanceComponentViewSet,
+    MaintenanceWorkOrderItemViewSet,
 )
 from .evidences import EvidenceViewSet
 from .inspections import (
@@ -39,6 +41,8 @@ from .vehicles import (
 __all__ = [
     "CarrierViewSet",
    "MaintenancePolicyViewSet",
+   "MaintenanceComponentViewSet",
+   "MaintenanceWorkOrderItemViewSet",
     "DefectReleaseRequestViewSet",
     "DefectReleaseValidationViewSet",
     "DefectViewSet",

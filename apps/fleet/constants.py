@@ -289,7 +289,6 @@ class MaintenanceWorkOrderKind(models.TextChoices):
 
 class MaintenanceWorkOrderStatus(models.TextChoices):
     PLANNED = "PLANNED", "Planifié"
-    IN_PROGRESS = "IN_PROGRESS", "En cours"
     COMPLETED = "COMPLETED", "Terminé"
     CANCELLED = "CANCELLED", "Annulé"
 

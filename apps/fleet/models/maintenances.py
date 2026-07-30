@@ -11,118 +11,6 @@ from .base import TimeStampedSoftDeletableModel
 
 
 
-
-# -------------------------------------------------------------------
-# MaintenanceComponent
-# Catalogue des composants pouvant faire l'objet d'une maintenance.
-# Les composants sont rattachés à un scope véhicule.
-# -------------------------------------------------------------------
-#
-# Représente un composant standard du véhicule pouvant être utilisé
-# dans un ordre de travail.
-#
-class MaintenanceComponent(TimeStampedSoftDeletableModel):
-    """
-    Catalogue des composants de maintenance.
-    """
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
-    code = models.CharField(
-        max_length=50,
-        unique=True,
-    )
-
-    name = models.CharField(
-        max_length=150,
-    )
-
-    scope = models.CharField(
-        max_length=20,
-        choices=VehicleScope.choices,
-    )
-
-    description = models.TextField(
-        blank=True,
-    )
-
-    is_active = models.BooleanField(
-        default=True,
-    )
-
-    class Meta:
-        ordering = [
-            "scope",
-            "name",
-        ]
-
-    def __str__(self):
-        return f"{self.scope} - {self.name}"
-
-
-
-# -------------------------------------------------------------------
-# MaintenanceWorkOrderItem
-#
-# Représente une intervention précise à l’intérieur d’un ordre de travail.
-#
-# Un ordre de travail peut contenir plusieurs éléments.
-# Chaque élément concerne un composant de maintenance précis.
-#
-# Exemple :
-# - pneus ;
-# - freins ;
-# - moteur ;
-# - trou d’homme ;
-# - vanne.
-#
-# Le scope n’est pas stocké directement sur ce modèle.
-# Il est déterminé à partir du composant associé afin d’éviter
-# les incohérences entre le composant et sa partie du véhicule.
-# -------------------------------------------------------------------
-class MaintenanceWorkOrderItem(TimeStampedSoftDeletableModel):
-    """
-    Représente une intervention précise dans un ordre de travail.
-    """
-
-    id = models.UUIDField(
-        primary_key=True,
-        default=uuid.uuid4,
-        editable=False,
-    )
-
-    work_order = models.ForeignKey(
-        "fleet.MaintenanceWorkOrder",
-        on_delete=models.CASCADE,
-        related_name="items",
-    )
-
-    component = models.ForeignKey(
-        "fleet.MaintenanceComponent",
-        on_delete=models.PROTECT,
-        related_name="work_order_items",
-    )
-
-    description = models.TextField(
-        blank=True,
-    )
-
-    class Meta:
-        ordering = [
-            "created_at",
-        ]
-
-    def __str__(self):
-        return f"{self.work_order} - {self.component}"
-
-
-
-
-
 # Définit les règles configurables d’un programme de maintenance préventive.
 # Elle précise les intervalles et les tolérances applicables.
 # Elle ne représente ni une échéance concrète ni une intervention réalisée.
@@ -263,6 +151,120 @@ class MaintenanceSchedule(TimeStampedSoftDeletableModel):
 
 
 
+
+
+# -------------------------------------------------------------------
+# MaintenanceComponent
+# Catalogue des composants pouvant faire l'objet d'une maintenance.
+# Les composants sont rattachés à un scope véhicule.
+# -------------------------------------------------------------------
+#
+# Représente un composant standard du véhicule pouvant être utilisé
+# dans un ordre de travail.
+#
+class MaintenanceComponent(TimeStampedSoftDeletableModel):
+    """
+    Catalogue des composants de maintenance.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    code = models.CharField(
+        max_length=50,
+        unique=True,
+    )
+
+    name = models.CharField(
+        max_length=150,
+    )
+
+    scope = models.CharField(
+        max_length=20,
+        choices=VehicleScope.choices,
+    )
+
+    description = models.TextField(
+        blank=True,
+    )
+
+    is_active = models.BooleanField(
+        default=True,
+    )
+
+    class Meta:
+        ordering = [
+            "scope",
+            "name",
+        ]
+
+    def __str__(self):
+        return f"{self.scope} - {self.name}"
+
+
+
+
+# -------------------------------------------------------------------
+# MaintenanceWorkOrderItem
+#
+# Représente une intervention précise à l’intérieur d’un ordre de travail.
+#
+# Un ordre de travail peut contenir plusieurs éléments.
+# Chaque élément concerne un composant de maintenance précis.
+#
+# Exemple :
+# - pneus ;
+# - freins ;
+# - moteur ;
+# - trou d’homme ;
+# - vanne.
+#
+# Le scope n’est pas stocké directement sur ce modèle.
+# Il est déterminé à partir du composant associé afin d’éviter
+# les incohérences entre le composant et sa partie du véhicule.
+# -------------------------------------------------------------------
+class MaintenanceWorkOrderItem(TimeStampedSoftDeletableModel):
+    """
+    Représente une intervention précise dans un ordre de travail.
+    """
+
+    id = models.UUIDField(
+        primary_key=True,
+        default=uuid.uuid4,
+        editable=False,
+    )
+
+    work_order = models.ForeignKey(
+        "fleet.MaintenanceWorkOrder",
+        on_delete=models.CASCADE,
+        related_name="items",
+    )
+
+    component = models.ForeignKey(
+        "fleet.MaintenanceComponent",
+        on_delete=models.PROTECT,
+        related_name="work_order_items",
+    )
+
+    description = models.TextField(
+        blank=True,
+    )
+
+    class Meta:
+        ordering = [
+            "created_at",
+        ]
+
+    def __str__(self):
+        return f"{self.work_order} - {self.component}"
+
+
+
+
+
 # -------------------------------------------------------------------
 # MaintenanceWorkOrder
 #
@@ -350,11 +352,6 @@ class MaintenanceWorkOrder(TimeStampedSoftDeletableModel):
     )
 
     planned_end_at = models.DateTimeField(
-        null=True,
-        blank=True,
-    )
-
-    started_at = models.DateTimeField(
         null=True,
         blank=True,
     )
