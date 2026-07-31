@@ -1,9 +1,10 @@
-from apps.fleet.constants import MaintenanceWorkOrderStatus
-from apps.fleet.models import MaintenanceComponent,MaintenanceWorkOrder,MaintenanceWorkOrderItem
+from apps.fleet.constants import MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus
+from apps.fleet.models import Vehicle,MaintenanceSchedule,Defect,MaintenanceComponent,MaintenanceWorkOrder,MaintenanceWorkOrderItem
 from django.db import transaction
 from django.utils import timezone
 
 from django.core.exceptions import ValidationError as DjangoValidationError
+from datetime import datetime
 from rest_framework.exceptions import ValidationError
 
 # =======================================
@@ -255,3 +256,103 @@ def delete_maintenance_work_order_item(
     )
 
     return item
+
+
+# -------------------------------------------------------------------
+# Vérifie que l'origine de l'ordre correspond à son type.
+# -------------------------------------------------------------------
+def _ensure_work_order_origin_matches_kind(
+    *,
+    kind: str,
+    schedule: MaintenanceSchedule | None,
+    defect: Defect | None,
+) -> None:
+    """
+    Vérifie que l'origine de l'ordre de travail est cohérente
+    avec son type.
+    """
+
+    if kind == MaintenanceWorkOrderKind.PREVENTIVE:
+        if schedule is None:
+            raise ValidationError(
+                {
+                    "schedule": (
+                        "Une maintenance préventive doit être liée "
+                        "à une planification."
+                    )
+                }
+            )
+
+        if defect is not None:
+            raise ValidationError(
+                {
+                    "defect": (
+                        "Une maintenance préventive ne peut pas être "
+                        "associée à un défaut."
+                    )
+                }
+            )
+
+    elif kind == MaintenanceWorkOrderKind.CORRECTIVE:
+        if schedule is not None:
+            raise ValidationError(
+                {
+                    "schedule": (
+                        "Une maintenance corrective ne peut pas être "
+                        "associée à une planification."
+                    )
+                }
+            )
+
+
+# =====================================
+# CRÉER UN ORDRE DE TRAVAIL MAINTENANCE
+# =====================================
+
+# create_maintenance_work_order
+# Crée un ordre de travail de maintenance planifié.
+@transaction.atomic
+def create_maintenance_work_order(
+    *,
+    vehicle: Vehicle,
+    kind: str,
+    title: str,
+    user,
+    description: str = "",
+    schedule: MaintenanceSchedule | None = None,
+    defect: Defect | None = None,
+    planned_start_at: datetime | None = None,
+    planned_end_at: datetime | None = None,
+) -> MaintenanceWorkOrder:
+    """
+    Crée un ordre de travail de maintenance.
+    """
+
+    _ensure_work_order_origin_matches_kind(
+        kind=kind,
+        schedule=schedule,
+        defect=defect,
+    )
+
+    work_order = MaintenanceWorkOrder(
+        vehicle=vehicle,
+        kind=kind,
+        status=MaintenanceWorkOrderStatus.PLANNED,
+        title=title.strip(),
+        description=description.strip(),
+        schedule=schedule,
+        defect=defect,
+        planned_start_at=planned_start_at,
+        planned_end_at=planned_end_at,
+        created_by=user,
+        updated_by=user,
+    )
+
+    try:
+        work_order.full_clean()
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.message_dict) from exc
+
+    work_order.save()
+
+    return work_order

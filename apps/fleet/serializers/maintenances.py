@@ -144,4 +144,57 @@ class MaintenanceWorkOrderItemSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
         )
+
+
+
+
+from rest_framework import serializers
+
+from apps.fleet.models import MaintenanceWorkOrder
+
+
+class MaintenanceWorkOrderSerializer(serializers.ModelSerializer):
+    """
+    Serializer des ordres de travail de maintenance.
+
+    La création et les modifications métier sont déléguées
+    aux services de maintenance.
+    """
+
+    class Meta:
+        model = MaintenanceWorkOrder
+
+        fields = (
+            "id",
+            "vehicle",
+            "kind",
+            "status",
+            "title",
+            "description",
+            "schedule",
+            "defect",
+            "planned_start_at",
+            "planned_end_at",
+            "completed_at",
+            "cancelled_at",
+            "completion_notes",
+            "cancellation_reason",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        )
+
+        read_only_fields = (
+            "id",
+            "status",
+            "completed_at",
+            "cancelled_at",
+            "completion_notes",
+            "cancellation_reason",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        )
     
