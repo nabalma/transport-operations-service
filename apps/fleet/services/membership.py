@@ -122,7 +122,21 @@ def _ensure_request_can_be_submitted(*, membership_request):
             }
         )
     
+# -------------------------------------------------------------------
+# Vérifie qu'une demande peut être soumise.
+# -------------------------------------------------------------------
+def _ensure_request_can_be_deleted(*, membership_request):
+    if membership_request.status != VehicleMembershipRequestStatus.DRAFT:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seules les demandes en statut DRAFT "
+                    "peuvent être soumises."
+                )
+            }
+        )
 
+    
 def _notify_manager_membership_request_submitted(*,membership_request,):
     ...
     
@@ -162,11 +176,12 @@ def submit_vehicle_membership_request(*,membership_request_id,submitted_by,):
 def delete_vehicle_membership_request(*,membership_request_id,deleted_by,):
     membership_request = _get_membership_request_or_error(membership_request_id=membership_request_id,)
     
-    _ensure_request_can_be_submitted(membership_request=membership_request,)
-    membership_request.is_deleted=True
+    _ensure_request_can_be_deleted(membership_request=membership_request,)
+    membership_request.is_deleted = True
     membership_request.status = VehicleMembershipRequestStatus.CANCELLED
-    membership_request.updated_by = deleted_by
+    membership_request.deleted_at = timezone.now()
     membership_request.deleted_by = deleted_by
+    membership_request.updated_by = deleted_by
     membership_request.save(update_fields=["is_deleted","status","updated_by","updated_at","deleted_by","deleted_at"])
 
     #Si le save a marché, envoyer le email en asynchrone

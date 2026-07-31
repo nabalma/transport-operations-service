@@ -93,6 +93,32 @@ class MaintenanceWorkOrderItemSerializer(serializers.ModelSerializer):
         read_only=True,
     )
 
+    def validate(self, attrs: dict) -> dict:
+        """
+        Empêche le déplacement d'une intervention vers un autre
+        ordre de travail après sa création.
+        """
+
+        if self.instance is None:
+            return attrs
+
+        work_order = attrs.get("work_order")
+
+        if (
+            work_order is not None
+            and work_order != self.instance.work_order
+        ):
+            raise serializers.ValidationError(
+                {
+                    "work_order": (
+                        "Une intervention ne peut pas être déplacée "
+                        "vers un autre ordre de travail."
+                    )
+                }
+            )
+
+        return attrs
+
     class Meta:
         model = MaintenanceWorkOrderItem
 
@@ -118,3 +144,4 @@ class MaintenanceWorkOrderItemSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
         )
+    
