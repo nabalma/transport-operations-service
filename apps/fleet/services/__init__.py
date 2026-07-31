@@ -25,6 +25,11 @@ from .maintenance_work_orders import (
     update_maintenance_work_order_item,
     delete_maintenance_work_order_item,
     create_maintenance_work_order,
+    update_maintenance_work_order,
+    complete_maintenance_work_order,
+    cancel_maintenance_work_order,
+    delete_maintenance_work_order,
+
 )
 
 
@@ -58,6 +63,10 @@ __all__ = [
     "update_maintenance_work_order_item",
     "delete_maintenance_work_order_item",
     "create_maintenance_work_order",
+    "update_maintenance_work_order",
+    "complete_maintenance_work_order",
+    "cancel_maintenance_work_order",
+    "delete_maintenance_work_order",
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",

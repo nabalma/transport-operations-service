@@ -5,8 +5,13 @@ from apps.fleet.models import MaintenanceWorkOrder,MaintenancePolicy,Maintenance
 
 from rest_framework.viewsets import ModelViewSet
 from apps.fleet.permissions import MaintenancePolicyPermission
-from apps.fleet.serializers import MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
-from apps.fleet.services import create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
+from apps.fleet.serializers import MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
+from apps.fleet.services import delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
+
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework import status
+from django.db.models import Prefetch
 
 
 class MaintenancePolicyViewSet(ModelViewSet):
@@ -154,25 +159,40 @@ class MaintenanceWorkOrderViewSet(ModelViewSet):
     """
 
     serializer_class = MaintenanceWorkOrderSerializer
-    http_method_names = (
-        "get",
-        "post",
-        "head",
-        "options",
-    )
 
+    http_method_names = (
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "head",
+    "options",
+    )
+    
     def get_queryset(self):
         return (
             MaintenanceWorkOrder.objects
-            .filter(is_deleted=False)
-            .select_related(
-                "vehicle",
-                "schedule",
-                "defect",
-                "created_by",
-                "updated_by",
-            )
-            .order_by("-created_at")
+    .filter(is_deleted=False)
+    .select_related(
+        "vehicle",
+        "schedule",
+        "defect",
+        "created_by",
+        "updated_by",
+    )
+    .prefetch_related(
+        Prefetch(
+            "items",
+            queryset=(
+                MaintenanceWorkOrderItem.objects
+                .filter(is_deleted=False)
+                .select_related("component")
+                .order_by("created_at")
+            ),
+        ),
+    )
+    .order_by("-created_at")
         )
 
     def perform_create(self, serializer):
@@ -196,3 +216,140 @@ class MaintenanceWorkOrderViewSet(ModelViewSet):
         )
 
         serializer.instance = work_order
+
+
+    def perform_update(self, serializer):
+        """
+        Met à jour un ordre de travail de maintenance.
+        """
+
+        work_order = serializer.instance
+
+        work_order = update_maintenance_work_order(
+            work_order=work_order,
+            kind=serializer.validated_data.get(
+                "kind",
+                work_order.kind,
+            ),
+            title=serializer.validated_data.get(
+                "title",
+                work_order.title,
+            ),
+            description=serializer.validated_data.get(
+                "description",
+                work_order.description,
+            ),
+            schedule=serializer.validated_data.get(
+                "schedule",
+                work_order.schedule,
+            ),
+            defect=serializer.validated_data.get(
+                "defect",
+                work_order.defect,
+            ),
+            planned_start_at=serializer.validated_data.get(
+                "planned_start_at",
+                work_order.planned_start_at,
+            ),
+            planned_end_at=serializer.validated_data.get(
+                "planned_end_at",
+                work_order.planned_end_at,
+            ),
+            user=self.request.user,
+        )
+
+        serializer.instance = work_order
+
+    def perform_destroy(
+    self,
+    instance: MaintenanceWorkOrder,
+    ) -> None:
+            """
+            Supprime logiquement un ordre de travail.
+            """
+
+            delete_maintenance_work_order(
+                work_order=instance,
+                user=self.request.user,
+            )
+
+
+    @action(
+        detail=True,
+        methods=["post"],
+        url_path="complete",
+        serializer_class=MaintenanceWorkOrderCompleteInputSerializer,
+    )
+    def complete(
+        self,
+        request,
+        pk=None,
+    ):
+        """
+        Déclare un ordre de travail comme terminé.
+        """
+
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        work_order = complete_maintenance_work_order(
+            work_order=self.get_object(),
+            completion_notes=serializer.validated_data[
+                "completion_notes"
+            ],
+            user=request.user,
+        )
+
+        output_serializer = MaintenanceWorkOrderSerializer(
+            work_order,
+        )
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_200_OK,
+        )
+
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="cancel",
+    serializer_class=MaintenanceWorkOrderCancelInputSerializer,
+)
+    def cancel(
+    self,
+    request,
+    pk=None,
+    ):
+            """
+            Annule un ordre de travail.
+            """
+
+            serializer = self.get_serializer(
+                data=request.data,
+            )
+
+            serializer.is_valid(
+                raise_exception=True,
+            )
+
+            work_order = cancel_maintenance_work_order(
+                work_order=self.get_object(),
+                cancellation_reason=serializer.validated_data[
+                    "cancellation_reason"
+                ],
+                user=request.user,
+            )
+
+            output_serializer = MaintenanceWorkOrderSerializer(
+                work_order,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_200_OK,
+            )

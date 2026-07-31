@@ -1,3 +1,4 @@
+from apps.fleet.constants import VehicleMembershipStatus
 from apps.fleet.models import Defect, Inspection, InspectionCriterion, NextTripEligibilityEvaluation, Vehicle, VehicleAvailabilityEvaluation, VehicleMembershipRequest
 from rest_framework.exceptions import ValidationError
 from django.db.models import QuerySet
@@ -53,6 +54,24 @@ def list_vehicle_membership_requests(
     )
 
 
+
+def list_active_fleet_vehicles() -> QuerySet[Vehicle]:
+    return (
+        Vehicle.objects
+        .filter(
+            is_deleted=False,
+            vehicle_memberships__is_deleted=False,
+            vehicle_memberships__status=VehicleMembershipStatus.ACTIVE,
+            vehicle_memberships__exit_date__isnull=True,
+        )
+        .select_related("carrier")
+        .prefetch_related(
+            "tanker_compartments",
+            "vehicle_memberships",
+            "documents",
+        )
+        .distinct()
+    )
 
 #====================
 #     INSPECTIONS

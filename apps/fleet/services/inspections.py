@@ -3,7 +3,7 @@ from decimal import Decimal
 
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
 from apps.fleet.services.defects import create_system_defect
-from apps.fleet.services.membership import _ensure_vehicle_has_active_membership, get_active_vehicle_membership
+from apps.fleet.services.membership import ensure_vehicle_has_active_membership, get_active_vehicle_membership
 from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
@@ -362,7 +362,7 @@ def create_inspection(*,vehicle : Vehicle, inspection_context: str, inspector,)-
 
     _validate_inspection_context(inspection_context=inspection_context,)
     inspection_version = _get_current_inspection_version(inspection_context=inspection_context,)
-    _ensure_vehicle_has_active_membership(vehicle=vehicle,)
+    ensure_vehicle_has_active_membership(vehicle=vehicle,)
     _get_valid_carrier_or_error(vehicle=vehicle,)
     _ensure_vehicle_is_active(vehicle=vehicle,)
     _ensure_vehicle_has_no_in_progress_inspection(vehicle=vehicle,)

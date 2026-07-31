@@ -1,7 +1,7 @@
 from apps.fleet.filters import VehicleFilter
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
-from apps.fleet.selectors import list_vehicle_membership_requests, list_vehicles
+from apps.fleet.selectors import list_active_fleet_vehicles, list_vehicle_membership_requests, list_vehicles
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.decorators import action
@@ -31,6 +31,21 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
 
    filter_backends = [DjangoFilterBackend]
    filterset_class = VehicleFilter
+
+
+   @action(detail=False, methods=["get"], url_path="in-fleet")
+   def in_fleet(self, request):
+        queryset = list_active_fleet_vehicles()
+        queryset = self.filter_queryset(queryset)
+
+        page = self.paginate_queryset(queryset)
+
+        if page is not None:
+            serializer = self.get_serializer(page, many=True)
+            return self.get_paginated_response(serializer.data)
+
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):

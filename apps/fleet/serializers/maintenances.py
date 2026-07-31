@@ -161,6 +161,33 @@ class MaintenanceWorkOrderSerializer(serializers.ModelSerializer):
     aux services de maintenance.
     """
 
+    items = MaintenanceWorkOrderItemSerializer(
+        many=True,
+        read_only=True,
+    )
+
+
+
+    def validate(self, attrs):
+        if self.instance is None:
+            return attrs
+
+        vehicle = attrs.get("vehicle")
+
+        if vehicle is not None and vehicle != self.instance.vehicle:
+            raise serializers.ValidationError(
+                {
+                    "vehicle": (
+                        "Le véhicule d’un ordre de travail ne peut pas "
+                        "être modifié après sa création."
+                    )
+                }
+            )
+
+        return attrs
+
+
+
     class Meta:
         model = MaintenanceWorkOrder
 
@@ -183,6 +210,7 @@ class MaintenanceWorkOrderSerializer(serializers.ModelSerializer):
             "updated_at",
             "created_by",
             "updated_by",
+              "items",
         )
 
         read_only_fields = (
@@ -197,4 +225,35 @@ class MaintenanceWorkOrderSerializer(serializers.ModelSerializer):
             "created_by",
             "updated_by",
         )
+
+
+
+class MaintenanceWorkOrderCompleteInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à la clôture d’un ordre de travail.
+    """
+
+    completion_notes = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        trim_whitespace=True,
+    )
+
+
+
+class MaintenanceWorkOrderCancelInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à l’annulation d’un ordre de travail.
+    """
+
+    cancellation_reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
     

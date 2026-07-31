@@ -391,7 +391,7 @@ SASSURER QUN VEHICULE A UNE MEMBERSHIP VALIDE
 
 # _ensure_vehicle_has_active_membership
 # Ensures that the vehicle currently belongs to the fleet.
-def _ensure_vehicle_has_active_membership(*, vehicle):
+def ensure_vehicle_has_active_membership(*, vehicle):
     """
     Validate that the vehicle has an active fleet membership.
     """

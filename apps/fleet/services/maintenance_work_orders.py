@@ -5,6 +5,7 @@ from django.utils import timezone
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime
+from apps.fleet.services.membership import ensure_vehicle_has_active_membership
 from rest_framework.exceptions import ValidationError
 
 # =======================================
@@ -327,6 +328,9 @@ def create_maintenance_work_order(
     """
     Crée un ordre de travail de maintenance.
     """
+    ensure_vehicle_has_active_membership(
+        vehicle=vehicle,
+    )
 
     _ensure_work_order_origin_matches_kind(
         kind=kind,
@@ -354,5 +358,383 @@ def create_maintenance_work_order(
         raise ValidationError(exc.message_dict) from exc
 
     work_order.save()
+
+    return work_order
+
+
+
+# _ensure_work_order_allows_updates
+# Vérifie qu’un ordre de travail peut encore être modifié.
+def _ensure_work_order_allows_updates(
+    *,
+    work_order: MaintenanceWorkOrder,
+) -> None:
+    """
+    Vérifie que l'ordre de travail peut encore être modifié.
+    """
+
+    if work_order.is_deleted:
+        raise ValidationError(
+            {
+                "work_order": (
+                    "Cet ordre de travail a été supprimé."
+                )
+            }
+        )
+
+    if work_order.status in (
+        MaintenanceWorkOrderStatus.COMPLETED,
+        MaintenanceWorkOrderStatus.CANCELLED,
+    ):
+        raise ValidationError(
+            {
+                "status": (
+                    "Cet ordre de travail ne peut plus être modifié."
+                )
+            }
+        )
+
+
+# =====================================
+# METTRE À JOUR UN ORDRE DE TRAVAIL
+# =====================================
+
+# update_maintenance_work_order
+# Met à jour les informations modifiables d'un ordre de travail.
+@transaction.atomic
+def update_maintenance_work_order(
+    *,
+    work_order: MaintenanceWorkOrder,
+    kind: str,
+    title: str,
+    description: str,
+    schedule: MaintenanceSchedule | None,
+    defect: Defect | None,
+    planned_start_at: datetime | None,
+    planned_end_at: datetime | None,
+    user,
+) -> MaintenanceWorkOrder:
+    """
+    Met à jour les informations modifiables d'un ordre de travail.
+
+    Le véhicule et le statut ne peuvent pas être modifiés.
+    """
+
+    _ensure_work_order_allows_updates(
+        work_order=work_order,
+    )
+
+    _ensure_work_order_origin_matches_kind(
+        kind=kind,
+        schedule=schedule,
+        defect=defect,
+    )
+
+    work_order.kind = kind
+    work_order.title = title.strip()
+    work_order.description = description.strip()
+    work_order.schedule = schedule
+    work_order.defect = defect
+    work_order.planned_start_at = planned_start_at
+    work_order.planned_end_at = planned_end_at
+    work_order.updated_by = user
+
+    try:
+        work_order.full_clean()
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.message_dict) from exc
+
+    work_order.save()
+
+    return work_order
+
+
+
+# _work_order_has_active_items
+# Indique si un ordre de travail contient au moins une intervention active.
+def _work_order_has_active_items(
+    *,
+    work_order: MaintenanceWorkOrder,
+) -> bool:
+    """
+    Retourne True si l’ordre contient au moins un item non supprimé.
+    """
+
+    return work_order.items.filter(
+        is_deleted=False,
+    ).exists()
+
+
+# _ensure_work_order_can_be_completed
+# Vérifie qu’un ordre de travail peut être déclaré terminé.
+def _ensure_work_order_can_be_completed(
+    *,
+    work_order: MaintenanceWorkOrder,
+) -> None:
+    """
+    Vérifie qu’un ordre planifié contient au moins une intervention
+    active avant sa clôture.
+    """
+
+    if work_order.is_deleted:
+        raise ValidationError(
+            {
+                "work_order": (
+                    "Un ordre de travail supprimé ne peut pas être terminé."
+                )
+            }
+        )
+
+    if work_order.status != MaintenanceWorkOrderStatus.PLANNED:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seul un ordre de travail planifié peut être terminé."
+                )
+            }
+        )
+
+    has_active_item = _work_order_has_active_items( work_order=work_order)
+
+    if not has_active_item:
+        raise ValidationError(
+            {
+                "items": (
+                    "Un ordre de travail doit contenir au moins une "
+                    "intervention avant d’être terminé."
+                )
+            }
+        )
+
+
+
+# =====================================
+# TERMINER UN ORDRE DE TRAVAIL
+# =====================================
+
+# complete_maintenance_work_order
+# Déclare un ordre de travail comme terminé.
+@transaction.atomic
+def complete_maintenance_work_order(
+    *,
+    work_order: MaintenanceWorkOrder,
+    completion_notes: str,
+    user,
+) -> MaintenanceWorkOrder:
+    """
+    Déclare un ordre de travail comme terminé.
+
+    L'ordre doit être encore planifié et contenir au moins une
+    intervention active.
+
+    Args:
+        work_order:
+            Ordre de travail à terminer.
+
+        completion_notes:
+            Notes de clôture de l'intervention.
+
+        user:
+            Utilisateur responsable de la clôture.
+
+    Returns:
+        MaintenanceWorkOrder:
+            L'ordre de travail terminé.
+
+    Raises:
+        ValidationError:
+            Si l'ordre de travail ne peut pas être terminé.
+    """
+
+    _ensure_work_order_can_be_completed(
+        work_order=work_order,
+    )
+
+    work_order.status = MaintenanceWorkOrderStatus.COMPLETED
+    work_order.completed_at = timezone.now()
+    work_order.completion_notes = completion_notes.strip()
+    work_order.updated_by = user
+
+    work_order.save(
+        update_fields=[
+            "status",
+            "completed_at",
+            "completion_notes",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+
+    return work_order
+
+
+
+# _ensure_work_order_can_be_cancelled
+# Vérifie qu’un ordre de travail peut encore être annulé.
+def _ensure_work_order_can_be_cancelled(
+    *,
+    work_order: MaintenanceWorkOrder,
+) -> None:
+    """
+    Autorise l’annulation uniquement pour un ordre planifié
+    et non supprimé.
+    """
+
+    if work_order.is_deleted:
+        raise ValidationError(
+            {
+                "work_order": (
+                    "Un ordre de travail supprimé ne peut pas être annulé."
+                )
+            }
+        )
+
+    if work_order.status != MaintenanceWorkOrderStatus.PLANNED:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seul un ordre de travail planifié peut être annulé."
+                )
+            }
+        )
+
+# =====================================
+# ANNULER UN ORDRE DE TRAVAIL
+# =====================================
+
+# cancel_maintenance_work_order
+# Annule un ordre de travail encore planifié.
+@transaction.atomic
+def cancel_maintenance_work_order(
+    *,
+    work_order: MaintenanceWorkOrder,
+    cancellation_reason: str,
+    user,
+) -> MaintenanceWorkOrder:
+    """
+    Annule un ordre de travail planifié.
+
+    Le motif d’annulation est obligatoire.
+    """
+
+    _ensure_work_order_can_be_cancelled(
+        work_order=work_order,
+    )
+
+    cancellation_reason = cancellation_reason.strip()
+
+    if not cancellation_reason:
+        raise ValidationError(
+            {
+                "cancellation_reason": (
+                    "Le motif d’annulation est obligatoire."
+                )
+            }
+        )
+
+    work_order.status = MaintenanceWorkOrderStatus.CANCELLED
+    work_order.cancelled_at = timezone.now()
+    work_order.cancellation_reason = cancellation_reason
+    work_order.updated_by = user
+
+    work_order.save(
+        update_fields=[
+            "status",
+            "cancelled_at",
+            "cancellation_reason",
+            "updated_by",
+            "updated_at",
+        ]
+    )
+
+    return work_order
+
+
+
+# _ensure_work_order_can_be_deleted
+# Vérifie qu’un ordre de travail peut être supprimé logiquement.
+def _ensure_work_order_can_be_deleted(
+    *,
+    work_order: MaintenanceWorkOrder,
+) -> None:
+    """
+    Autorise la suppression uniquement pour un ordre planifié.
+    """
+
+    if work_order.is_deleted:
+        raise ValidationError(
+            {
+                "work_order": (
+                    "Cet ordre de travail est déjà supprimé."
+                )
+            }
+        )
+
+    if work_order.status != MaintenanceWorkOrderStatus.PLANNED:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seul un ordre de travail planifié peut être supprimé."
+                )
+            }
+        )
+
+# =====================================
+# SUPPRIMER UN ORDRE DE TRAVAIL
+# =====================================
+
+# delete_maintenance_work_order
+# Supprime logiquement un ordre de travail.
+@transaction.atomic
+def delete_maintenance_work_order(
+    *,
+    work_order: MaintenanceWorkOrder,
+    user,
+    reason: str = "",
+) -> MaintenanceWorkOrder:
+    """
+    Supprime logiquement un ordre de travail.
+
+    Seul un ordre planifié peut être supprimé.
+
+    Args:
+        work_order:
+            Ordre de travail à supprimer.
+
+        user:
+            Utilisateur responsable de la suppression.
+
+        reason:
+            Motif facultatif de la suppression.
+
+    Returns:
+        MaintenanceWorkOrder:
+            L'ordre de travail supprimé logiquement.
+
+    Raises:
+        ValidationError:
+            Si l'ordre de travail ne peut pas être supprimé.
+    """
+
+    _ensure_work_order_can_be_deleted(
+        work_order=work_order,
+    )
+
+    work_order.is_deleted = True
+    work_order.deleted_at = timezone.now()
+    work_order.deleted_by = user
+    work_order.deleted_reason = reason.strip() or None
+    work_order.updated_by = user
+
+    work_order.save(
+        update_fields=[
+            "is_deleted",
+            "deleted_at",
+            "deleted_by",
+            "deleted_reason",
+            "updated_by",
+            "updated_at",
+        ]
+    )
 
     return work_order
