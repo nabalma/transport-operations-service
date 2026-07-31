@@ -14,6 +14,7 @@ from .maintenances import (
     MaintenancePolicyViewSet,
     MaintenanceComponentViewSet,
     MaintenanceWorkOrderItemViewSet,
+    MaintenanceWorkOrderViewSet,
 )
 from .evidences import EvidenceViewSet
 from .inspections import (
@@ -43,6 +44,7 @@ __all__ = [
    "MaintenancePolicyViewSet",
    "MaintenanceComponentViewSet",
    "MaintenanceWorkOrderItemViewSet",
+   "MaintenanceWorkOrderViewSet",
     "DefectReleaseRequestViewSet",
     "DefectReleaseValidationViewSet",
     "DefectViewSet",

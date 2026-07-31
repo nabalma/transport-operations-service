@@ -1,12 +1,12 @@
 
 
 
-from apps.fleet.models import MaintenancePolicy,MaintenanceComponent,MaintenanceWorkOrderItem
+from apps.fleet.models import MaintenanceWorkOrder,MaintenancePolicy,MaintenanceComponent,MaintenanceWorkOrderItem
 
 from rest_framework.viewsets import ModelViewSet
 from apps.fleet.permissions import MaintenancePolicyPermission
-from apps.fleet.serializers import MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
-from apps.fleet.services import delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
+from apps.fleet.serializers import MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
+from apps.fleet.services import create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
 
 
 class MaintenancePolicyViewSet(ModelViewSet):
@@ -143,3 +143,56 @@ class MaintenanceWorkOrderItemViewSet(
             item=instance,
             user=self.request.user,
         )
+
+
+
+
+
+class MaintenanceWorkOrderViewSet(ModelViewSet):
+    """
+    API des ordres de travail de maintenance.
+    """
+
+    serializer_class = MaintenanceWorkOrderSerializer
+    http_method_names = (
+        "get",
+        "post",
+        "head",
+        "options",
+    )
+
+    def get_queryset(self):
+        return (
+            MaintenanceWorkOrder.objects
+            .filter(is_deleted=False)
+            .select_related(
+                "vehicle",
+                "schedule",
+                "defect",
+                "created_by",
+                "updated_by",
+            )
+            .order_by("-created_at")
+        )
+
+    def perform_create(self, serializer):
+        work_order = create_maintenance_work_order(
+            vehicle=serializer.validated_data["vehicle"],
+            kind=serializer.validated_data["kind"],
+            title=serializer.validated_data["title"],
+            description=serializer.validated_data.get(
+                "description",
+                "",
+            ),
+            schedule=serializer.validated_data.get("schedule"),
+            defect=serializer.validated_data.get("defect"),
+            planned_start_at=serializer.validated_data.get(
+                "planned_start_at"
+            ),
+            planned_end_at=serializer.validated_data.get(
+                "planned_end_at"
+            ),
+            user=self.request.user,
+        )
+
+        serializer.instance = work_order
