@@ -1,6 +1,7 @@
 
 import uuid
 from django.db import models
+from django.conf import settings
 
 
 from apps.fleet.constants import (
@@ -37,7 +38,13 @@ class VehicleAvailabilityEvaluation(TimeStampedSoftDeletableModel):
     rule_version = models.CharField(max_length=50)
 
     # Utilisateur ayant validé ou invalidé le calcul.
-    validated_by = models.CharField(max_length=255, blank=True, null=True)
+    validated_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.PROTECT,
+    related_name="validated_vehicle_availability_evaluations",
+    null=True,
+    blank=True,
+)
 
     # Date de validation/invalidation.
     validated_at = models.DateTimeField(blank=True, null=True)

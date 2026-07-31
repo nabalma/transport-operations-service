@@ -133,13 +133,14 @@ class MaintenanceSchedule(TimeStampedSoftDeletableModel):
                 ),
                 name="maintenance_schedule_requires_due",
             ),
-            models.UniqueConstraint(
+                models.UniqueConstraint(
                 fields=("vehicle", "policy"),
                 condition=models.Q(
                     status=MaintenanceScheduleStatus.ACTIVE,
+                    is_deleted=False,
                 ),
                 name="unique_active_schedule_per_vehicle_policy",
-            ),
+            )
         ]
 
     def __str__(self):
@@ -239,7 +240,7 @@ class MaintenanceWorkOrderItem(TimeStampedSoftDeletableModel):
 
     work_order = models.ForeignKey(
         "fleet.MaintenanceWorkOrder",
-        on_delete=models.CASCADE,
+        on_delete=models.PROTECT,
         related_name="items",
     )
 

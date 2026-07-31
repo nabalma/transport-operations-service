@@ -305,7 +305,71 @@ def _ensure_work_order_origin_matches_kind(
                 }
             )
 
+# _ensure_work_order_sources_match_vehicle
+# Vérifie que la planification et le défaut concernent le même véhicule.
+def _ensure_work_order_sources_match_vehicle(
+    *,
+    vehicle: Vehicle,
+    schedule: MaintenanceSchedule | None,
+    defect: Defect | None,
+) -> None:
+    """
+    Vérifie la cohérence du véhicule entre l’ordre et ses sources.
+    """
 
+    if (
+        schedule is not None
+        and schedule.vehicle_id != vehicle.id
+    ):
+        raise ValidationError(
+            {
+                "schedule": (
+                    "La planification doit concerner le même véhicule "
+                    "que l’ordre de travail."
+                )
+            }
+        )
+
+    if (
+        defect is not None
+        and defect.vehicle_id != vehicle.id
+    ):
+        raise ValidationError(
+            {
+                "defect": (
+                    "Le défaut doit concerner le même véhicule "
+                    "que l’ordre de travail."
+                )
+            }
+        )
+
+ # _ensure_planned_dates_are_consistent
+# Vérifie la cohérence des dates planifiées d'un ordre de travail.
+def _ensure_planned_dates_are_consistent(
+    *,
+    planned_start_at: datetime | None,
+    planned_end_at: datetime | None,
+) -> None:
+    """
+    Vérifie que la date de fin planifiée n'est pas antérieure
+    à la date de début planifiée.
+    """
+
+    if (
+        planned_start_at is not None
+        and planned_end_at is not None
+        and planned_end_at < planned_start_at
+    ):
+        raise ValidationError(
+            {
+                "planned_end_at": (
+                    "La date de fin planifiée doit être postérieure "
+                    "ou égale à la date de début planifiée."
+                )
+            }
+        )
+
+       
 # =====================================
 # CRÉER UN ORDRE DE TRAVAIL MAINTENANCE
 # =====================================
@@ -336,6 +400,16 @@ def create_maintenance_work_order(
         kind=kind,
         schedule=schedule,
         defect=defect,
+    )
+    _ensure_work_order_sources_match_vehicle(
+    vehicle=vehicle,
+    schedule=schedule,
+    defect=defect,
+    )
+
+    _ensure_planned_dates_are_consistent(
+    planned_start_at=planned_start_at,
+    planned_end_at=planned_end_at,
     )
 
     work_order = MaintenanceWorkOrder(
@@ -429,6 +503,16 @@ def update_maintenance_work_order(
         schedule=schedule,
         defect=defect,
     )
+    _ensure_work_order_sources_match_vehicle(
+    vehicle=work_order.vehicle,
+    schedule=schedule,
+    defect=defect,
+    )
+
+    _ensure_planned_dates_are_consistent(
+    planned_start_at=planned_start_at,
+    planned_end_at=planned_end_at,
+)
 
     work_order.kind = kind
     work_order.title = title.strip()

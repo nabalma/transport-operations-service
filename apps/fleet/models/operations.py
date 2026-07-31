@@ -2,6 +2,7 @@
 import uuid
 
 from django.db import models
+from django.conf import settings
 
 from apps.fleet.constants import DowntimeSourceType, DowntimeStatus,ReturnToServiceDecision, ReturnToServiceSourceType
 
@@ -65,7 +66,13 @@ class ReturnToService(TimeStampedSoftDeletableModel):
     decision = models.CharField(max_length=20, choices=ReturnToServiceDecision.choices, default=ReturnToServiceDecision.PENDING)
 
     # Inspecteur ou autorité ayant décidé.
-    decided_by = models.CharField(max_length=255, blank=True, null=True)
+    decided_by = models.ForeignKey(
+    settings.AUTH_USER_MODEL,
+    on_delete=models.PROTECT,
+    related_name="return_to_service_decisions",
+    null=True,
+    blank=True,
+)
 
     # Date de décision.
     decided_at = models.DateTimeField(blank=True, null=True)
