@@ -1,10 +1,12 @@
-from apps.fleet.constants import MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus
+from apps.fleet.constants import MaintenanceScheduleStatus, MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus
 from apps.fleet.models import Vehicle,MaintenanceSchedule,Defect,MaintenanceComponent,MaintenanceWorkOrder,MaintenanceWorkOrderItem
 from django.db import transaction
 from django.utils import timezone
 
 from django.core.exceptions import ValidationError as DjangoValidationError
 from datetime import datetime
+from apps.fleet.services.defects import ensure_defect_is_open
+from apps.fleet.services.maintenance_schedules import fulfill_maintenance_schedule
 from apps.fleet.services.membership import ensure_vehicle_has_active_membership
 from rest_framework.exceptions import ValidationError
 
@@ -654,8 +656,16 @@ def complete_maintenance_work_order(
         ]
     )
 
-    return work_order
+    if (
+        work_order.kind == MaintenanceWorkOrderKind.PREVENTIVE
+        and work_order.schedule is not None
+    ):
+        fulfill_maintenance_schedule(
+            schedule=work_order.schedule,
+            user=user,
+        )
 
+    return work_order
 
 
 # _ensure_work_order_can_be_cancelled
@@ -872,3 +882,176 @@ def _ensure_schedule_has_no_planned_work_order(
                 )
             }
         )
+
+
+# _ensure_schedule_can_generate_work_order
+# Vérifie qu’une planification peut générer un ordre préventif.
+def _ensure_schedule_can_generate_work_order(
+    *,
+    schedule: MaintenanceSchedule,
+) -> None:
+    """
+    Autorise la génération uniquement depuis une planification
+    active et non supprimée.
+    """
+
+    if schedule.is_deleted:
+        raise ValidationError(
+            {
+                "schedule": (
+                    "Une planification supprimée ne peut pas générer "
+                    "un ordre de travail."
+                )
+            }
+        )
+
+    if schedule.status != MaintenanceScheduleStatus.ACTIVE:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seule une planification active peut générer "
+                    "un ordre de travail."
+                )
+            }
+        )
+
+
+
+# ==========================================
+# GÉNÉRER UN ORDRE DE TRAVAIL PRÉVENTIF
+# ==========================================
+
+# generate_preventive_work_order
+# Génère un ordre préventif depuis une planification active.
+@transaction.atomic
+def generate_preventive_work_order(
+    *,
+    schedule: MaintenanceSchedule,
+    title: str,
+    user,
+    description: str = "",
+    planned_start_at: datetime | None = None,
+    planned_end_at: datetime | None = None,
+)-> MaintenanceWorkOrder:
+    """
+    Crée un ordre de travail préventif depuis une planification active.
+    """
+
+    _ensure_schedule_can_generate_work_order(
+        schedule=schedule,
+    )
+
+    return create_maintenance_work_order(
+        vehicle=schedule.vehicle,
+        kind=MaintenanceWorkOrderKind.PREVENTIVE,
+        title=title,
+        description=description,
+        schedule=schedule,
+        defect=None,
+        planned_start_at=planned_start_at,
+        planned_end_at=planned_end_at,
+        user=user,
+    )
+
+
+
+# _defect_has_planned_work_order
+# Indique si un ordre planifié existe déjà pour un défaut.
+def _defect_has_planned_work_order(
+    *,
+    defect: Defect,
+) -> bool:
+    """
+    Retourne True si le défaut possède déjà
+    un ordre de travail planifié non supprimé.
+    """
+
+    return MaintenanceWorkOrder.objects.filter(
+        defect=defect,
+        status=MaintenanceWorkOrderStatus.PLANNED,
+        is_deleted=False,
+    ).exists()
+
+
+# _ensure_defect_has_no_planned_work_order
+# Vérifie qu’aucun ordre planifié n’existe déjà pour le défaut.
+def _ensure_defect_has_no_planned_work_order(
+    *,
+    defect: Defect,
+) -> None:
+    """
+    Empêche la création de plusieurs ordres planifiés
+    pour un même défaut.
+    """
+
+    if _defect_has_planned_work_order(
+        defect=defect,
+    ):
+        raise ValidationError(
+            {
+                "defect": (
+                    "Un ordre de travail planifié existe déjà "
+                    "pour ce défaut."
+                )
+            }
+        )
+
+
+
+
+
+# _ensure_defect_can_generate_work_order
+# Vérifie qu’un défaut peut générer un ordre de travail correctif.
+def _ensure_defect_can_generate_work_order(
+    *,
+    defect: Defect,
+) -> None:
+    """
+    Autorise la génération uniquement depuis un défaut ouvert
+    et non supprimé.
+    """
+
+    ensure_defect_is_open(
+        defect=defect,
+    )
+
+    _ensure_defect_has_no_planned_work_order(
+        defect=defect,
+    )
+
+# ==========================================
+# GÉNÉRER UN ORDRE DE TRAVAIL CORRECTIF
+# ==========================================
+
+# generate_corrective_work_order
+# Génère un ordre correctif depuis un défaut ouvert.
+@transaction.atomic
+def generate_corrective_work_order(
+    *,
+    defect: Defect,
+    title: str,
+    user,
+    description: str = "",
+    planned_start_at: datetime | None = None,
+    planned_end_at: datetime | None = None,
+) -> MaintenanceWorkOrder:
+    """
+    Crée un ordre de travail correctif depuis un défaut ouvert.
+    """
+
+    _ensure_defect_can_generate_work_order(
+        defect=defect,
+    )
+
+    return create_maintenance_work_order(
+        vehicle=defect.vehicle,
+        kind=MaintenanceWorkOrderKind.CORRECTIVE,
+        title=title,
+        description=description,
+        schedule=None,
+        defect=defect,
+        planned_start_at=planned_start_at,
+        planned_end_at=planned_end_at,
+        user=user,
+    )
+    

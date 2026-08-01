@@ -6,8 +6,8 @@ from apps.fleet.models import MaintenanceSchedule,MaintenanceWorkOrder,Maintenan
 
 from rest_framework.viewsets import ModelViewSet
 from apps.fleet.permissions import MaintenancePolicyPermission
-from apps.fleet.serializers import MaintenanceScheduleCancelInputSerializer,MaintenanceScheduleSerializer,MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
-from apps.fleet.services import delete_maintenance_schedule,fulfill_maintenance_schedule,update_maintenance_schedule, cancel_maintenance_schedule,create_maintenance_schedule,delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
+from apps.fleet.serializers import MaintenanceWorkOrderItemCreateInputSerializer, MaintenanceScheduleGenerateWorkOrderInputSerializer,MaintenanceScheduleCancelInputSerializer,MaintenanceScheduleSerializer,MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
+from apps.fleet.services import generate_preventive_work_order,delete_maintenance_schedule,fulfill_maintenance_schedule,update_maintenance_schedule, cancel_maintenance_schedule,create_maintenance_schedule,delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -356,6 +356,57 @@ class MaintenanceWorkOrderViewSet(ModelViewSet):
             )
 
 
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="items",
+    serializer_class=MaintenanceWorkOrderItemCreateInputSerializer,
+)
+    def create_item(
+    self,
+    request,
+    pk=None,
+    ):
+        """
+        Ajoute une intervention à un ordre de travail donné.
+        """
+
+        work_order = self.get_object()
+
+        serializer = MaintenanceWorkOrderItemSerializer(
+            data={
+                **request.data,
+                "work_order": work_order.pk,
+            },
+        )
+
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        item = create_maintenance_work_order_item(
+            work_order=work_order,
+            component=serializer.validated_data["component"],
+            description=serializer.validated_data.get(
+                "description",
+                "",
+            ),
+            user=request.user,
+        )
+
+        output_serializer = MaintenanceWorkOrderItemSerializer(
+            item,
+        )
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+
+
+
+
 class MaintenanceScheduleViewSet(ModelViewSet):
     """
     API des planifications de maintenance préventive.
@@ -521,3 +572,52 @@ class MaintenanceScheduleViewSet(ModelViewSet):
             schedule=instance,
             user=self.request.user,
         )
+
+
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="generate-work-order",
+    serializer_class=MaintenanceScheduleGenerateWorkOrderInputSerializer,
+)
+    def generate_work_order(
+    self,
+    request,
+    pk=None,
+):
+            """
+            Génère un ordre de travail préventif depuis une planification.
+            """
+
+            serializer = self.get_serializer(
+                data=request.data,
+            )
+            serializer.is_valid(
+                raise_exception=True,
+            )
+
+            work_order = generate_preventive_work_order(
+                schedule=self.get_object(),
+                title=serializer.validated_data["title"],
+                description=serializer.validated_data.get(
+                    "description",
+                    "",
+                ),
+                planned_start_at=serializer.validated_data.get(
+                    "planned_start_at",
+                ),
+                planned_end_at=serializer.validated_data.get(
+                    "planned_end_at",
+                ),
+                user=request.user,
+            )
+
+            output_serializer = MaintenanceWorkOrderSerializer(
+                work_order,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_201_CREATED,
+            )

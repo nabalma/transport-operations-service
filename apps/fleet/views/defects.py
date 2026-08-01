@@ -1,5 +1,7 @@
 
 
+from apps.fleet.serializers.maintenances import DefectGenerateWorkOrderInputSerializer, MaintenanceWorkOrderSerializer
+from apps.fleet.services.maintenance_work_orders import generate_corrective_work_order
 from rest_framework import status
 from rest_framework.response import Response
 from apps.fleet.services import submit_defect_release_request, validate_defect_release_request
@@ -45,6 +47,53 @@ class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 
         output_serializer = DefectReleaseRequestSerializer(
             release_request,
+        )
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="generate-work-order",
+    serializer_class=DefectGenerateWorkOrderInputSerializer,
+    )
+    def generate_work_order(
+    self,
+    request,
+    pk=None,
+    ):
+        """
+        Génère un ordre de travail correctif depuis un défaut.
+        """
+
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        work_order = generate_corrective_work_order(
+            defect=self.get_object(),
+            title=serializer.validated_data["title"],
+            description=serializer.validated_data.get(
+                "description",
+                "",
+            ),
+            planned_start_at=serializer.validated_data.get(
+                "planned_start_at",
+            ),
+            planned_end_at=serializer.validated_data.get(
+                "planned_end_at",
+            ),
+            user=request.user,
+        )
+
+        output_serializer = MaintenanceWorkOrderSerializer(
+            work_order,
         )
 
         return Response(

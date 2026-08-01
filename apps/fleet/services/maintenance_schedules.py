@@ -2,7 +2,6 @@
 from apps.fleet.constants import MaintenanceScheduleStatus, MaintenanceWorkOrderKind
 
 
-from apps.fleet.services.maintenance_work_orders import create_maintenance_work_order
 from apps.fleet.services.membership import ensure_vehicle_has_active_membership
 from apps.fleet.services.vehicles import ensure_vehicle_is_active
 from rest_framework.exceptions import ValidationError
@@ -630,70 +629,3 @@ def delete_maintenance_schedule(
     return schedule
 
 
-
-# _ensure_schedule_can_generate_work_order
-# Vérifie qu’une planification peut générer un ordre préventif.
-def _ensure_schedule_can_generate_work_order(
-    *,
-    schedule: MaintenanceSchedule,
-) -> None:
-    """
-    Autorise la génération uniquement depuis une planification
-    active et non supprimée.
-    """
-
-    if schedule.is_deleted:
-        raise ValidationError(
-            {
-                "schedule": (
-                    "Une planification supprimée ne peut pas générer "
-                    "un ordre de travail."
-                )
-            }
-        )
-
-    if schedule.status != MaintenanceScheduleStatus.ACTIVE:
-        raise ValidationError(
-            {
-                "status": (
-                    "Seule une planification active peut générer "
-                    "un ordre de travail."
-                )
-            }
-        )
-
-# ==========================================
-# GÉNÉRER UN ORDRE DE TRAVAIL PRÉVENTIF
-# ==========================================
-
-# generate_preventive_work_order
-# Génère un ordre préventif depuis une planification active.
-@transaction.atomic
-def generate_preventive_work_order(
-    *,
-    schedule: MaintenanceSchedule,
-    title: str,
-    user,
-    description: str = "",
-    planned_start_at: datetime | None = None,
-    planned_end_at: datetime | None = None,
-)-> MaintenanceWorkOrder:
-    """
-    Crée un ordre de travail préventif depuis une planification active.
-    """
-
-    _ensure_schedule_can_generate_work_order(
-        schedule=schedule,
-    )
-
-    return create_maintenance_work_order(
-        vehicle=schedule.vehicle,
-        kind=MaintenanceWorkOrderKind.PREVENTIVE,
-        title=title,
-        description=description,
-        schedule=schedule,
-        defect=None,
-        planned_start_at=planned_start_at,
-        planned_end_at=planned_end_at,
-        user=user,
-    )

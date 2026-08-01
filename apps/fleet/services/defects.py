@@ -1,8 +1,8 @@
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction
 from rest_framework.exceptions import ValidationError
-from apps.fleet.constants import (DefectCreationSource, DefectReleaseRequestStatus, DefectStatus, ValidationDecision,)
-from apps.fleet.models import Defect, DefectReleaseRequest,DefectReleaseValidation
+from apps.fleet.constants import (DefectCreationSource, DefectReleaseRequestStatus, DefectStatus, MaintenanceWorkOrderKind, MaintenanceWorkOrderStatus, ValidationDecision,)
+from apps.fleet.models import MaintenanceWorkOrder, Defect, DefectReleaseRequest,DefectReleaseValidation
 
 
 # -------------------------------------------------------------------
@@ -48,6 +48,37 @@ def create_system_defect(
     return defect
 
 
+# ensure_defect_is_open
+# Vérifie qu’un défaut existe encore et qu’il est ouvert.
+def ensure_defect_is_open(
+    *,
+    defect: Defect,
+) -> None:
+    """
+    Vérifie qu’un défaut est non supprimé et en statut OPEN.
+    """
+
+    if defect.is_deleted:
+        raise ValidationError(
+            {
+                "defect": (
+                    "Un défaut supprimé ne peut pas être utilisé."
+                )
+            }
+        )
+
+    if defect.status != DefectStatus.OPEN:
+        raise ValidationError(
+            {
+                "status": (
+                    "Seul un défaut ouvert peut être utilisé."
+                )
+            }
+        )
+
+
+
+
 # _ensure_can_submit_defect_release_request
 # Vérifie qu’un défaut peut recevoir une demande de levée.
 def _ensure_can_submit_defect_release_request(
@@ -60,23 +91,9 @@ def _ensure_can_submit_defect_release_request(
     d’une demande de levée de défaut.
     """
 
-    if defect.is_deleted:
-        raise ValidationError(
-            {
-                "defect": (
-                    "A deleted defect cannot receive a release request."
-                )
-            }
-        )
-
-    if defect.status != DefectStatus.OPEN:
-        raise ValidationError(
-            {
-                "status": (
-                    "Only an open defect can receive a release request."
-                )
-            }
-        )
+    ensure_defect_is_open(
+    defect=defect,
+    )
 
     has_pending_request = DefectReleaseRequest.objects.filter(
         defect=defect,
@@ -126,6 +143,51 @@ def _mark_defect_as_pending_validation(
     )
 
 
+
+
+
+# _defect_has_completed_work_order
+# Indique si un défaut possède au moins un ordre correctif terminé.
+def _defect_has_completed_work_order(
+    *,
+    defect: Defect,
+) -> bool:
+    """
+    Retourne True si le défaut possède au moins un ordre
+    de travail correctif terminé.
+    """
+
+    return MaintenanceWorkOrder.objects.filter(
+        defect=defect,
+        kind=MaintenanceWorkOrderKind.CORRECTIVE,
+        status=MaintenanceWorkOrderStatus.COMPLETED,
+        is_deleted=False,
+    ).exists()
+
+
+# _ensure_defect_has_completed_work_order
+# Vérifie qu’un défaut possède un ordre correctif terminé.
+def _ensure_defect_has_completed_work_order(
+    *,
+    defect: Defect,
+) -> None:
+    """
+    Empêche la soumission d’une demande de levée
+    tant qu’aucun ordre correctif lié au défaut n’est terminé.
+    """
+
+    if not _defect_has_completed_work_order(
+        defect=defect,
+    ):
+        raise ValidationError(
+            {
+                "defect": (
+                    "Une demande de levée ne peut être soumise "
+                    "qu’après la fin d’un ordre de travail correctif."
+                )
+            }
+        )
+
 # submit_defect_release_request
 # Soumet une demande de levée pour un défaut corrigé.
 @transaction.atomic
@@ -149,6 +211,10 @@ def submit_defect_release_request(
         defect=defect,
         correction_summary=correction_summary,
     )
+
+    _ensure_defect_has_completed_work_order(
+    defect=defect,
+)
 
     release_request = DefectReleaseRequest.objects.create(
         defect=defect,

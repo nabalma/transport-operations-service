@@ -29,6 +29,8 @@ from .maintenance_work_orders import (
     complete_maintenance_work_order,
     cancel_maintenance_work_order,
     delete_maintenance_work_order,
+    generate_preventive_work_order,
+    generate_corrective_work_order,
   
 
 
@@ -41,6 +43,8 @@ from .maintenance_schedules import (
     update_maintenance_schedule,
     fulfill_maintenance_schedule,
     delete_maintenance_schedule,
+
+    
   
     
 
@@ -90,6 +94,8 @@ __all__ = [
     "update_maintenance_schedule",
     "fulfill_maintenance_schedule",
     "delete_maintenance_schedule",
+    "generate_preventive_work_order",
+    "generate_corrective_work_order",
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",

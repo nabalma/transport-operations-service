@@ -343,4 +343,89 @@ class MaintenanceScheduleCancelInputSerializer(
         allow_blank=False,
         trim_whitespace=True,
     )
+
+
+class MaintenanceScheduleGenerateWorkOrderInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à la génération
+    d’un ordre de travail préventif.
+    """
+
+    title = serializers.CharField(
+        max_length=255,
+        trim_whitespace=True,
+    )
+
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        trim_whitespace=True,
+    )
+
+    planned_start_at = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+    planned_end_at = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+
+class DefectGenerateWorkOrderInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à la génération
+    d’un ordre de travail correctif depuis un défaut.
+    """
+
+    title = serializers.CharField(
+        max_length=255,
+        trim_whitespace=True,
+    )
+
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        trim_whitespace=True,
+    )
+
+    planned_start_at = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+    planned_end_at = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+
+
+class MaintenanceWorkOrderItemCreateInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à l’ajout d’une intervention
+    dans un ordre de travail donné.
+    """
+
+    component = serializers.PrimaryKeyRelatedField(
+        queryset=MaintenanceComponent.objects.filter(
+            is_deleted=False,
+        ),
+    )
+
+    description = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        default="",
+        trim_whitespace=True,
+    )
     

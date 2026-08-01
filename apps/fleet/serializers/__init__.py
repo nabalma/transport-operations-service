@@ -30,6 +30,9 @@ from .maintenances import (
     MaintenanceWorkOrderCancelInputSerializer,
     MaintenanceScheduleSerializer,
     MaintenanceScheduleCancelInputSerializer,
+    MaintenanceScheduleGenerateWorkOrderInputSerializer,
+    DefectGenerateWorkOrderInputSerializer,
+    MaintenanceWorkOrderItemCreateInputSerializer,
 )
 
 
@@ -87,6 +90,9 @@ __all__ = [
     "MaintenanceWorkOrderCancelInputSerializer",
     "MaintenanceScheduleSerializer",
     "MaintenanceScheduleCancelInputSerializer",
+    "MaintenanceScheduleGenerateWorkOrderInputSerializer",
+    "MaintenanceWorkOrderItemCreateInputSerializer",
+    "DefectGenerateWorkOrderInputSerializer",
     "DowntimeSerializer",
     "DowntimeSummarySerializer",
     "EvidenceSerializer",
