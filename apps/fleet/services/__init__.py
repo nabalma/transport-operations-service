@@ -32,6 +32,7 @@ from .maintenance_work_orders import (
   
 
 
+
 )
 
 from .maintenance_schedules import (   
@@ -89,8 +90,6 @@ __all__ = [
     "update_maintenance_schedule",
     "fulfill_maintenance_schedule",
     "delete_maintenance_schedule",
-    "ensure_schedule_has_no_planned_work_order",
-    "ensure_maintenance_policy_can_be_scheduled",
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",

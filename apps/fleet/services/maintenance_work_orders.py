@@ -407,7 +407,10 @@ def create_maintenance_work_order(
     defect=defect,
     )
 
-    
+    if schedule is not None:
+        _ensure_schedule_has_no_planned_work_order(
+        schedule=schedule,
+    )
 
     _ensure_planned_dates_are_consistent(
     planned_start_at=planned_start_at,
@@ -824,3 +827,48 @@ def delete_maintenance_work_order(
     )
 
     return work_order
+
+
+
+
+# _schedule_has_planned_work_order
+# Indique si un ordre planifié existe déjà pour une planification.
+def _schedule_has_planned_work_order(
+    *,
+    schedule: MaintenanceSchedule,
+) -> bool:
+    """
+    Retourne True si la planification possède déjà
+    un ordre de travail planifié non supprimé.
+    """
+
+    return MaintenanceWorkOrder.objects.filter(
+        schedule=schedule,
+        status=MaintenanceWorkOrderStatus.PLANNED,
+        is_deleted=False,
+    ).exists()
+
+
+
+# _ensure_schedule_has_no_planned_work_order
+# Vérifie qu’aucun ordre planifié n’existe déjà pour la planification.
+def _ensure_schedule_has_no_planned_work_order(
+    *,
+    schedule: MaintenanceSchedule,
+) -> None:
+    """
+    Empêche la création de plusieurs ordres planifiés
+    pour une même planification.
+    """
+
+    if _schedule_has_planned_work_order(
+        schedule=schedule,
+    ):
+        raise ValidationError(
+            {
+                "schedule": (
+                    "Un ordre de travail planifié existe déjà "
+                    "pour cette planification."
+                )
+            }
+        )
