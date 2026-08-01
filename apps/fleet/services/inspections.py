@@ -4,7 +4,7 @@ from decimal import Decimal
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
 from apps.fleet.services.defects import create_system_defect
 from apps.fleet.services.membership import ensure_vehicle_has_active_membership, get_active_vehicle_membership
-from apps.fleet.services.vehicles import _ensure_vehicle_is_active, _get_valid_carrier_or_error
+from apps.fleet.services.vehicles import ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.db import transaction

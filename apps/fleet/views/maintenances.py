@@ -1,12 +1,13 @@
 
 
 
-from apps.fleet.models import MaintenanceWorkOrder,MaintenancePolicy,MaintenanceComponent,MaintenanceWorkOrderItem
+from apps.fleet.models import MaintenanceSchedule,MaintenanceWorkOrder,MaintenancePolicy,MaintenanceComponent,MaintenanceWorkOrderItem
+
 
 from rest_framework.viewsets import ModelViewSet
 from apps.fleet.permissions import MaintenancePolicyPermission
-from apps.fleet.serializers import MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
-from apps.fleet.services import delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
+from apps.fleet.serializers import MaintenanceScheduleCancelInputSerializer,MaintenanceScheduleSerializer,MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
+from apps.fleet.services import delete_maintenance_schedule,fulfill_maintenance_schedule,update_maintenance_schedule, cancel_maintenance_schedule,create_maintenance_schedule,delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
 
 from rest_framework.decorators import action
 from rest_framework.response import Response
@@ -353,3 +354,170 @@ class MaintenanceWorkOrderViewSet(ModelViewSet):
                 output_serializer.data,
                 status=status.HTTP_200_OK,
             )
+
+
+class MaintenanceScheduleViewSet(ModelViewSet):
+    """
+    API des planifications de maintenance préventive.
+    """
+
+    serializer_class = MaintenanceScheduleSerializer
+
+    http_method_names = (
+    "get",
+    "post",
+    "put",
+    "patch",
+    "delete",
+    "head",
+    "options",
+)
+
+    queryset = (
+        MaintenanceSchedule.objects
+        .filter(is_deleted=False)
+        .select_related(
+            "vehicle",
+            "policy",
+            "created_by",
+            "updated_by",
+        )
+        .order_by(
+            "due_at",
+            "due_mileage",
+            "due_engine_hours",
+        )
+    )
+
+    def perform_create(self, serializer):
+        """
+        Crée une planification via le service métier.
+        """
+
+        schedule = create_maintenance_schedule(
+            vehicle=serializer.validated_data["vehicle"],
+            policy=serializer.validated_data["policy"],
+            due_at=serializer.validated_data.get("due_at"),
+            due_mileage=serializer.validated_data.get(
+                "due_mileage",
+            ),
+            due_engine_hours=serializer.validated_data.get(
+                "due_engine_hours",
+            ),
+            user=self.request.user,
+        )
+
+        serializer.instance = schedule
+
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="cancel",
+    serializer_class=MaintenanceScheduleCancelInputSerializer,
+    )
+    def cancel(
+    self,
+    request,
+    pk=None,
+    ):
+            """
+            Annule une planification de maintenance active.
+            """
+
+            serializer = self.get_serializer(
+                data=request.data,
+            )
+            serializer.is_valid(
+                raise_exception=True,
+            )
+
+            schedule = cancel_maintenance_schedule(
+                schedule=self.get_object(),
+                cancellation_reason=serializer.validated_data[
+                    "cancellation_reason"
+                ],
+                user=request.user,
+            )
+
+            output_serializer = MaintenanceScheduleSerializer(
+                schedule,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+
+
+    def perform_update(
+    self,
+    serializer: MaintenanceScheduleSerializer,
+    ) -> None:
+            """
+            Met à jour les échéances via le service métier.
+            """
+
+            schedule = serializer.instance
+
+            updated_schedule = update_maintenance_schedule(
+                schedule=schedule,
+                due_at=serializer.validated_data.get(
+                    "due_at",
+                    schedule.due_at,
+                ),
+                due_mileage=serializer.validated_data.get(
+                    "due_mileage",
+                    schedule.due_mileage,
+                ),
+                due_engine_hours=serializer.validated_data.get(
+                    "due_engine_hours",
+                    schedule.due_engine_hours,
+                ),
+                user=self.request.user,
+            )
+
+            serializer.instance = updated_schedule
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="fulfill",
+)
+    def fulfill(
+            self,
+            request,
+            pk=None,
+    ):
+            """
+            Déclare une planification de maintenance comme réalisée.
+            """
+
+            schedule = fulfill_maintenance_schedule(
+                schedule=self.get_object(),
+                user=request.user,
+            )
+
+            output_serializer = MaintenanceScheduleSerializer(
+                schedule,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+
+    def perform_destroy(
+    self,
+    instance: MaintenanceSchedule,
+) -> None:
+        """
+        Supprime logiquement une planification de maintenance.
+        """
+
+        delete_maintenance_schedule(
+            schedule=instance,
+            user=self.request.user,
+        )

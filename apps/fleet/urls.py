@@ -1,4 +1,4 @@
-from apps.fleet.views import MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
+from apps.fleet.views import MaintenanceScheduleViewSet, MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
@@ -23,6 +23,7 @@ router.register("maintenance-policies",MaintenancePolicyViewSet,basename="mainte
 router.register("maintenance-components",MaintenanceComponentViewSet,basename="maintenance-component",)
 router.register("maintenance-work-order-items",MaintenanceWorkOrderItemViewSet,basename="maintenance-work-order-item",)
 router.register("maintenance-work-orders",MaintenanceWorkOrderViewSet,basename="maintenance-work-order",)
+router.register("maintenance-schedules",MaintenanceScheduleViewSet,basename="maintenance-schedule",)
 router.register("downtimes",DowntimeViewSet,basename="downtime",)
 router.register("return-to-services",ReturnToServiceViewSet,basename="return-to-service",)
 router.register("vehicle-availability-evaluations",VehicleAvailabilityEvaluationViewSet,basename="vehicle-availability-evaluation",)

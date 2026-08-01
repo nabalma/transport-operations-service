@@ -407,6 +407,8 @@ def create_maintenance_work_order(
     defect=defect,
     )
 
+    
+
     _ensure_planned_dates_are_consistent(
     planned_start_at=planned_start_at,
     planned_end_at=planned_end_at,

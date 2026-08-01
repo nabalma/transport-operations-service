@@ -29,8 +29,22 @@ from .maintenance_work_orders import (
     complete_maintenance_work_order,
     cancel_maintenance_work_order,
     delete_maintenance_work_order,
+  
+
 
 )
+
+from .maintenance_schedules import (   
+    create_maintenance_schedule,
+    cancel_maintenance_schedule,
+    update_maintenance_schedule,
+    fulfill_maintenance_schedule,
+    delete_maintenance_schedule,
+  
+    
+
+)
+
 
 
 from .membership import (
@@ -39,10 +53,13 @@ from .membership import (
     cancel_vehicle_membership_request,
     approve_vehicle_membership_request,
     reject_vehicle_membership_request,
+  
+    
 )
 
 from .vehicles import (
     activate_vehicle,
+    ensure_vehicle_is_active,
 )
 
 __all__ = [
@@ -67,10 +84,18 @@ __all__ = [
     "complete_maintenance_work_order",
     "cancel_maintenance_work_order",
     "delete_maintenance_work_order",
+    "create_maintenance_schedule",
+    "cancel_maintenance_schedule",
+    "update_maintenance_schedule",
+    "fulfill_maintenance_schedule",
+    "delete_maintenance_schedule",
+    "ensure_schedule_has_no_planned_work_order",
+    "ensure_maintenance_policy_can_be_scheduled",
     "create_vehicle_membership_request",
     "submit_vehicle_membership_request",
     "cancel_vehicle_membership_request",
     "approve_vehicle_membership_request",
     "reject_vehicle_membership_request",
     "activate_vehicle",
+    "ensure_vehicle_is_active",
 ]

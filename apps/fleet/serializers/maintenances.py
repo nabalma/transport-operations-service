@@ -1,5 +1,5 @@
 
-from apps.fleet.models import MaintenanceComponent,MaintenanceWorkOrderItem,MaintenancePolicy
+from apps.fleet.models import MaintenanceWorkOrder,MaintenanceSchedule, MaintenanceComponent,MaintenanceWorkOrderItem,MaintenancePolicy
 from rest_framework import serializers
 
 class MaintenancePolicySerializer(serializers.ModelSerializer):
@@ -147,12 +147,6 @@ class MaintenanceWorkOrderItemSerializer(serializers.ModelSerializer):
 
 
 
-
-from rest_framework import serializers
-
-from apps.fleet.models import MaintenanceWorkOrder
-
-
 class MaintenanceWorkOrderSerializer(serializers.ModelSerializer):
     """
     Serializer des ordres de travail de maintenance.
@@ -249,6 +243,99 @@ class MaintenanceWorkOrderCancelInputSerializer(
 ):
     """
     Valide les données nécessaires à l’annulation d’un ordre de travail.
+    """
+
+    cancellation_reason = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+
+class MaintenanceScheduleSerializer(serializers.ModelSerializer):
+    """
+    Serializer des planifications de maintenance préventive.
+    """
+
+    def validate(self, attrs):
+            """
+            Empêche de modifier le véhicule ou la politique
+            après la création de la planification.
+            """
+
+            if self.instance is None:
+                return attrs
+
+            vehicle = attrs.get("vehicle")
+            policy = attrs.get("policy")
+
+            if (
+                vehicle is not None
+                and vehicle != self.instance.vehicle
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "vehicle": (
+                            "Le véhicule d’une planification ne peut pas "
+                            "être modifié."
+                        )
+                    }
+                )
+
+            if (
+                policy is not None
+                and policy != self.instance.policy
+            ):
+                raise serializers.ValidationError(
+                    {
+                        "policy": (
+                            "La politique d’une planification ne peut pas "
+                            "être modifiée."
+                        )
+                    }
+                )
+
+            return attrs
+
+    class Meta:
+        model = MaintenanceSchedule
+
+        fields = (
+            "id",
+            "vehicle",
+            "policy",
+            "status",
+            "due_at",
+            "due_mileage",
+            "due_engine_hours",
+            "fulfilled_at",
+            "cancelled_at",
+            "cancellation_reason",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        )
+
+        read_only_fields = (
+            "id",
+            "status",
+            "fulfilled_at",
+            "cancelled_at",
+            "cancellation_reason",
+            "created_at",
+            "updated_at",
+            "created_by",
+            "updated_by",
+        )
+
+
+class MaintenanceScheduleCancelInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à l’annulation
+    d’une planification de maintenance.
     """
 
     cancellation_reason = serializers.CharField(
