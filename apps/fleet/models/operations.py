@@ -149,6 +149,14 @@ class ReturnToService(TimeStampedSoftDeletableModel):
 
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="return_to_services")
 
+    downtime = models.ForeignKey(
+    "fleet.Downtime",
+    on_delete=models.PROTECT,
+    related_name="return_to_services",
+    null=True,
+    blank=True,
+    )
+
     # Origine de la remise en service.
     source_type = models.CharField(max_length=30, choices=ReturnToServiceSourceType.choices)
 

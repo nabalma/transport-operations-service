@@ -57,8 +57,10 @@ from .inspections import (
     RecordCriterionResultInputSerializer,
 )
 from .operations import (
+    DowntimeCauseSerializer,
     DowntimeSerializer,
     ReturnToServiceSerializer,
+    DowntimeCreateInputSerializer,
 )
 from .vehicles import (
     TankerCompartmentSerializer,
@@ -67,7 +69,9 @@ from .vehicles import (
     VehicleMembershipRequestSerializer,
     VehicleMembershipSerializer,
     VehicleSerializer,
+    VehicleManualDowntimeInputSerializer,
 )
+
 
 __all__ = [
     "CarrierSerializer",
@@ -93,8 +97,9 @@ __all__ = [
     "MaintenanceScheduleGenerateWorkOrderInputSerializer",
     "MaintenanceWorkOrderItemCreateInputSerializer",
     "DefectGenerateWorkOrderInputSerializer",
-    "DowntimeSerializer",
-    "DowntimeSummarySerializer",
+    "DowntimeSerializer",  
+    "DowntimeCauseSerializer",
+    "DowntimeCreateInputSerializer",
     "EvidenceSerializer",
     "EvidenceSummarySerializer",
     "GenerateInspectionSheetInputSerializer",
@@ -132,4 +137,5 @@ __all__ = [
     "VehicleMembershipSummarySerializer",
     "VehicleSerializer",
     "VehicleSummarySerializer",
+    "VehicleManualDowntimeInputSerializer",
 ]

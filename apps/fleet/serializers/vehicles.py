@@ -155,3 +155,23 @@ class VehicleDocumentSerializer(serializers.ModelSerializer):
             "deleted_by",
         ]
 
+
+
+
+class VehicleManualDowntimeInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires à l’immobilisation
+    manuelle d’un véhicule donné.
+    """
+
+    reason = serializers.CharField(
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+    start_date = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )

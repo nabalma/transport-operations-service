@@ -32,9 +32,6 @@ from .maintenance_work_orders import (
     generate_preventive_work_order,
     generate_corrective_work_order,
   
-
-
-
 )
 
 from .maintenance_schedules import (   
@@ -69,46 +66,65 @@ from .vehicles import (
 
 
 from .downtimes import (
-    _vehicle_has_active_downtime,
+    add_downtime_cause,
+    create_manual_downtime,
+    create_or_update_downtime_from_blocking_criterion_result,
 )
 
 
 
-
 __all__ = [
+    # Defects
     "create_system_defect",
     "submit_defect_release_request",
     "validate_defect_release_request",
-    "build_blank_inspection_sheet",
+
+    # Downtimes
+    "add_downtime_cause",
+    "create_manual_downtime",
+    "create_or_update_downtime_from_blocking_criterion_result",
+
+    # Inspections
     "activate_inspection_scoring_policy",
-    "create_inspection_version",
-    "update_inspection_version_status",
-    "create_inspection",
-    "complete_inspection",
+    "build_blank_inspection_sheet",
     "cancel_inspection",
+    "complete_inspection",
+    "create_inspection",
+    "create_inspection_version",
     "record_criterion_result",
+    "update_inspection_version_status",
+
+    # Maintenance policies
     "create_maintenance_policy",
-    "create_maintenance_component",
-    "create_maintenance_work_order_item",
-    "update_maintenance_work_order_item",
-    "delete_maintenance_work_order_item",
-    "create_maintenance_work_order",
-    "update_maintenance_work_order",
-    "complete_maintenance_work_order",
-    "cancel_maintenance_work_order",
-    "delete_maintenance_work_order",
-    "create_maintenance_schedule",
+
+    # Maintenance schedules
     "cancel_maintenance_schedule",
-    "update_maintenance_schedule",
-    "fulfill_maintenance_schedule",
+    "create_maintenance_schedule",
     "delete_maintenance_schedule",
-    "generate_preventive_work_order",
+    "fulfill_maintenance_schedule",
+    "update_maintenance_schedule",
+
+    # Maintenance work orders
+    "cancel_maintenance_work_order",
+    "complete_maintenance_work_order",
+    "create_maintenance_component",
+    "create_maintenance_work_order",
+    "create_maintenance_work_order_item",
+    "delete_maintenance_work_order",
+    "delete_maintenance_work_order_item",
     "generate_corrective_work_order",
-    "create_vehicle_membership_request",
-    "submit_vehicle_membership_request",
-    "cancel_vehicle_membership_request",
+    "generate_preventive_work_order",
+    "update_maintenance_work_order",
+    "update_maintenance_work_order_item",
+
+    # Membership
     "approve_vehicle_membership_request",
+    "cancel_vehicle_membership_request",
+    "create_vehicle_membership_request",
     "reject_vehicle_membership_request",
+    "submit_vehicle_membership_request",
+
+    # Vehicles
     "activate_vehicle",
     "ensure_vehicle_is_active",
 ]

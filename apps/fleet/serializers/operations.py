@@ -1,19 +1,84 @@
+from apps.fleet.models.operations import Downtime, DowntimeCause, ReturnToService
+from apps.fleet.models.vehicles import Vehicle
 from rest_framework import serializers
 
-from apps.fleet.models import (
-    Downtime,
-    ReturnToService,
-)
+
+class DowntimeCauseSerializer(serializers.ModelSerializer):
+    """
+    Sérialise une cause liée à une immobilisation.
+    """
+
+    class Meta:
+        model = DowntimeCause
+
+        fields = (
+            "id",
+            "inspection_criterion_result",
+            "defect",
+            "reason",
+            "is_resolved",
+            "resolved_at",
+            "resolved_by",
+            "created_at",
+            "created_by",
+        )
+
+        read_only_fields = fields
 
 
+class DowntimeSerializer(serializers.ModelSerializer):
+    """
+    Sérialise une immobilisation avec ses causes actives.
+    """
 
-class DowntimeSummarySerializer(serializers.ModelSerializer):
+    causes = DowntimeCauseSerializer(
+        many=True,
+        read_only=True,
+    )
+
     class Meta:
         model = Downtime
-        fields = [
-            "source_type",
+
+        fields = (
+            "id",
+            "vehicle",
             "status",
-        ]
+            "start_date",
+            "end_date",
+            "causes",
+            "created_at",
+            "created_by",
+            "updated_at",
+            "updated_by",
+        )
+
+        read_only_fields = fields
+
+
+
+
+class DowntimeCreateInputSerializer(serializers.Serializer):
+    """
+    Valide les données nécessaires à une immobilisation manuelle.
+    """
+
+    vehicle = serializers.PrimaryKeyRelatedField(
+        queryset=Vehicle.objects.filter(
+            is_deleted=False,
+        ),
+    )
+
+    reason = serializers.CharField(
+        allow_blank=False,
+        trim_whitespace=True,
+    )
+
+    start_date = serializers.DateTimeField(
+        required=False,
+        allow_null=True,
+    )
+
+
 
 
 class ReturnToServiceSummarySerializer(serializers.ModelSerializer):
@@ -27,20 +92,6 @@ class ReturnToServiceSummarySerializer(serializers.ModelSerializer):
 
 
 
-class DowntimeSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Downtime
-        fields = "__all__"
-        read_only_fields = [
-            "id",
-            "created_at",
-            "created_by",
-            "updated_at",
-            "updated_by",
-            "is_deleted",
-            "deleted_at",
-            "deleted_by",
-        ]
 
 
 class ReturnToServiceSerializer(serializers.ModelSerializer):

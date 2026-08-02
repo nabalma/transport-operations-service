@@ -1,4 +1,7 @@
 from apps.fleet.filters import VehicleFilter
+from apps.fleet.serializers.operations import DowntimeSerializer
+from apps.fleet.serializers.vehicles import VehicleManualDowntimeInputSerializer
+from apps.fleet.services.downtimes import create_manual_downtime
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
 from apps.fleet.selectors import list_active_fleet_vehicles, list_vehicle_membership_requests, list_vehicles
@@ -46,6 +49,48 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
 
         serializer = self.get_serializer(queryset, many=True)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+   @action(
+    detail=True,
+    methods=["post"],
+    url_path="downtimes/manual",
+    serializer_class=VehicleManualDowntimeInputSerializer,
+)
+   def create_manual_downtime(
+        self,
+        request,
+        pk=None,
+    ):
+        """
+        Crée une immobilisation manuelle pour ce véhicule.
+        """
+
+        vehicle = self.get_object()
+
+        serializer = self.get_serializer(
+            data=request.data,
+        )
+        serializer.is_valid(
+            raise_exception=True,
+        )
+
+        downtime = create_manual_downtime(
+            vehicle=vehicle,
+            reason=serializer.validated_data["reason"],
+            start_date=serializer.validated_data.get(
+                "start_date",
+            ),
+            user=request.user,
+        )
+
+        output_serializer = DowntimeSerializer(
+            downtime,
+        )
+
+        return Response(
+            output_serializer.data,
+            status=status.HTTP_201_CREATED,
+        )
 
 
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
