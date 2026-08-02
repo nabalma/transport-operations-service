@@ -67,6 +67,14 @@ from .vehicles import (
     ensure_vehicle_is_active,
 )
 
+
+from .downtimes import (
+    _vehicle_has_active_downtime,
+)
+
+
+
+
 __all__ = [
     "create_system_defect",
     "submit_defect_release_request",

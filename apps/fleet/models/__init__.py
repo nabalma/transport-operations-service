@@ -39,6 +39,7 @@ from .maintenances import (
 from .operations import (
     Downtime,
     ReturnToService,
+    DowntimeCause,
 )
 
 from .availabilities import (
@@ -77,6 +78,7 @@ __all__ = [
     "MaintenanceWorkOrder",
      "Downtime",
     "ReturnToService",
+    "DowntimeCause",
      "NextTripEligibilityEvaluation",
     "NextTripEligibilityEvaluationReason",
     "VehicleAvailabilityEvaluation",

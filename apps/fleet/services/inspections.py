@@ -3,6 +3,7 @@ from decimal import Decimal
 
 from apps.fleet.constants import InspectionContext, InspectionCriterionResultValue, InspectionOverallResult, InspectionScoringPolicyStatus, InspectionStatus
 from apps.fleet.services.defects import create_system_defect
+from apps.fleet.services.downtimes import create_or_update_downtime_from_blocking_criterion_result
 from apps.fleet.services.membership import ensure_vehicle_has_active_membership, get_active_vehicle_membership
 from apps.fleet.services.vehicles import ensure_vehicle_is_active, _get_valid_carrier_or_error
 from rest_framework.exceptions import ValidationError
@@ -422,6 +423,32 @@ def cancel_inspection(*,inspection: Inspection,user,) -> Inspection:
 
 
 
+
+def _handle_failed_criterion_result(
+    *,
+    criterion_result: InspectionCriterionResult,
+    user,
+) -> None:
+
+    if criterion_result.result != InspectionCriterionResultValue.FAIL:
+        return
+
+    defect = None
+
+    if criterion_result.criterion.creates_defect_if_failed:
+        defect = generate_defect_from_failed_criterion_result(
+            criterion_result=criterion_result,
+            user=user,
+        )
+
+    if criterion_result.criterion.is_blocking_if_failed:
+        create_or_update_downtime_from_blocking_criterion_result(
+            criterion_result=criterion_result,
+            defect=defect,
+            user=user,
+        )
+
+
 # =======================================================
 # ENREGISTRER UNE REPONSE A  UNE INSPECTION DUN VEHICULE
 # =======================================================
@@ -485,12 +512,13 @@ def record_criterion_result(*,inspection: Inspection,criterion: InspectionCriter
 
     criterion_result.save()
 
-    if (
-    criterion_result.result == InspectionCriterionResultValue.FAIL and criterion_result.criterion.creates_defect_if_failed ):
-        generate_defect_from_failed_criterion_result(criterion_result=criterion_result,user=user)
+
+    _handle_failed_criterion_result(
+    criterion_result=criterion_result,
+    user=user,
+)
 
     return criterion_result
-
 
 
 
@@ -929,6 +957,7 @@ def generate_defect_from_failed_criterion_result(*,criterion_result,user,):
     """
     Create and return a system-generated defect from a failed criterion result.
     """
+  
     _ensure_can_create_defect_from_failed_criterion_result(
         criterion_result=criterion_result,
     )
