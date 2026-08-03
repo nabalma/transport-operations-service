@@ -61,6 +61,10 @@ from .operations import (
     DowntimeSerializer,
     ReturnToServiceSerializer,
     DowntimeCreateInputSerializer,
+    ReturnToServiceSummarySerializer,
+    ReturnToServiceCreateInputSerializer,
+    ReturnToServiceApproveInputSerializer,
+    ReturnToServiceRejectInputSerializer,
 )
 from .vehicles import (
     TankerCompartmentSerializer,
@@ -123,6 +127,9 @@ __all__ = [
     "RecordCriterionResultInputSerializer",
     "ReturnToServiceSerializer",
     "ReturnToServiceSummarySerializer",
+    "ReturnToServiceCreateInputSerializer",
+    "ReturnToServiceApproveInputSerializer",
+    "ReturnToServiceRejectInputSerializer",  
     "TankerCompartmentSerializer",
     "TankerCompartmentSummarySerializer",
     "VehicleAgePolicyConfigurationSerializer",

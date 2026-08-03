@@ -125,3 +125,32 @@ class ReturnToServiceSerializer(serializers.ModelSerializer):
             "deleted_at",
             "deleted_by",
         ]
+
+
+class ReturnToServiceApproveInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données facultatives d’une approbation.
+    """
+
+    comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        trim_whitespace=True,
+    )
+
+
+class ReturnToServiceRejectInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide les données nécessaires au rejet.
+    """
+
+    comment = serializers.CharField(
+        required=True,
+        allow_blank=False,
+        trim_whitespace=True,
+    )

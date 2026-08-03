@@ -1,10 +1,10 @@
 
 from apps.fleet.models import Downtime,ReturnToService,DowntimeCause
-from apps.fleet.serializers import DowntimeSerializer, ReturnToServiceSerializer
-from apps.fleet.serializers.operations import DowntimeCauseSerializer, DowntimeCreateInputSerializer, ReturnToServiceCreateInputSerializer
-from apps.fleet.services import create_manual_downtime
-from apps.fleet.services.downtimes import resolve_downtime_cause
-from apps.fleet.services.return_to_services import create_return_to_service
+
+from apps.fleet.serializers import DowntimeSerializer, ReturnToServiceSerializer,DowntimeCauseSerializer, DowntimeCreateInputSerializer, ReturnToServiceCreateInputSerializer
+
+from apps.fleet.serializers.operations import ReturnToServiceApproveInputSerializer, ReturnToServiceRejectInputSerializer
+from apps.fleet.services import resolve_downtime_cause,create_manual_downtime,create_return_to_service, approve_return_to_service,reject_return_to_service 
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from rest_framework.viewsets import ModelViewSet
 
@@ -175,10 +175,7 @@ class DowntimeCauseViewSet(ModelViewSet):
                 status=status.HTTP_200_OK,
             )
 
-
-
-
-    
+   
 
 class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
     queryset = (ReturnToService.objects
@@ -186,6 +183,79 @@ class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = ReturnToServiceSerializer
-  
 
 
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="approve",
+    serializer_class=ReturnToServiceApproveInputSerializer,
+)
+    def approve(
+    self,
+    request,
+    pk=None,
+):
+            """
+            Approuve une demande de remise en service.
+            """
+
+            serializer = self.get_serializer(
+                data=request.data,
+            )
+            serializer.is_valid(
+                raise_exception=True,
+            )
+
+            return_to_service = approve_return_to_service(
+                return_to_service=self.get_object(),
+                comment=serializer.validated_data.get("comment"),
+                user=request.user,
+            )
+
+            output_serializer = ReturnToServiceSerializer(
+                return_to_service,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_200_OK,
+            )
+
+
+    @action(
+    detail=True,
+    methods=["post"],
+    url_path="reject",
+    serializer_class=ReturnToServiceRejectInputSerializer,
+)
+    def reject(
+    self,
+    request,
+    pk=None,
+):
+            """
+            Rejette une demande de remise en service.
+            """
+
+            serializer = self.get_serializer(
+                data=request.data,
+            )
+            serializer.is_valid(
+                raise_exception=True,
+            )
+
+            return_to_service = reject_return_to_service(
+                return_to_service=self.get_object(),
+                comment=serializer.validated_data["comment"],
+                user=request.user,
+            )
+
+            output_serializer = ReturnToServiceSerializer(
+                return_to_service,
+            )
+
+            return Response(
+                output_serializer.data,
+                status=status.HTTP_200_OK,
+            )

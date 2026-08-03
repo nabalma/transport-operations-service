@@ -71,6 +71,8 @@ from .downtimes import (
 
 from .return_to_services import (
     create_return_to_service,
+    approve_return_to_service,
+    reject_return_to_service
 )
 
 
@@ -89,6 +91,10 @@ __all__ = [
 
     # Return to service
     "create_return_to_service",
+    "approve_return_to_service",
+    "reject_return_to_service", 
+
+
 
     # Inspections
     "activate_inspection_scoring_policy",
