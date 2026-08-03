@@ -39,13 +39,10 @@ from .maintenance_schedules import (
     cancel_maintenance_schedule,
     update_maintenance_schedule,
     fulfill_maintenance_schedule,
-    delete_maintenance_schedule,
-
-    
-  
-    
+    delete_maintenance_schedule,   
 
 )
+
 
 
 
@@ -69,6 +66,11 @@ from .downtimes import (
     add_downtime_cause,
     create_manual_downtime,
     create_or_update_downtime_from_blocking_criterion_result,
+    resolve_downtime_cause,
+)
+
+from .return_to_services import (
+    create_return_to_service,
 )
 
 
@@ -79,10 +81,14 @@ __all__ = [
     "submit_defect_release_request",
     "validate_defect_release_request",
 
-    # Downtimes
+   # Downtimes
     "add_downtime_cause",
     "create_manual_downtime",
     "create_or_update_downtime_from_blocking_criterion_result",
+    "resolve_downtime_cause",
+
+    # Return to service
+    "create_return_to_service",
 
     # Inspections
     "activate_inspection_scoring_policy",

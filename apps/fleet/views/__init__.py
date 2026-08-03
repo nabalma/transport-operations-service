@@ -30,6 +30,7 @@ from .inspections import (
 from .operations import (
     DowntimeViewSet,
     ReturnToServiceViewSet,
+    DowntimeCauseViewSet,
 )
 from .vehicles import (
     TankerCompartmentViewSet,
@@ -51,6 +52,7 @@ __all__ = [
     "DefectReleaseValidationViewSet",
     "DefectViewSet",
     "DowntimeViewSet",
+    "DowntimeCauseViewSet",
     "EvidenceViewSet",
     "InspectionChapterViewSet",
     "InspectionCriterionResultViewSet",

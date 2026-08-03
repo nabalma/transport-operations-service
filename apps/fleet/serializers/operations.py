@@ -1,3 +1,4 @@
+from apps.fleet.constants import ReturnToServiceSourceType
 from apps.fleet.models.operations import Downtime, DowntimeCause, ReturnToService
 from apps.fleet.models.vehicles import Vehicle
 from rest_framework import serializers
@@ -89,6 +90,22 @@ class ReturnToServiceSummarySerializer(serializers.ModelSerializer):
             "proposed_by_system",
             "decision",
         ]
+
+class ReturnToServiceCreateInputSerializer(
+    serializers.Serializer,
+):
+    source_type = serializers.ChoiceField(
+        choices=ReturnToServiceSourceType.choices,
+    )
+
+    source_id = serializers.UUIDField(
+        required=False,
+        allow_null=True,
+    )
+
+    proposed_by_system = serializers.BooleanField(
+        default=False,
+    )
 
 
 
