@@ -1,5 +1,6 @@
 
 
+from apps.fleet.permissions import ValidateDefectReleaseRequestPermission, SubmitDefectReleaseRequestPermission,GenerateWorkOrderPermission
 from apps.fleet.serializers.maintenances import DefectGenerateWorkOrderInputSerializer, MaintenanceWorkOrderSerializer
 from apps.fleet.services.maintenance_work_orders import generate_corrective_work_order
 from rest_framework import status
@@ -25,6 +26,7 @@ class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
         methods=["post"],
         url_path="submit-release-request",
         serializer_class=DefectReleaseRequestSubmitSerializer,
+        permission_classes=[SubmitDefectReleaseRequestPermission]
     )
     def submit_release_request(self, request, pk=None):
         """
@@ -59,6 +61,7 @@ class DefectViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     methods=["post"],
     url_path="generate-work-order",
     serializer_class=DefectGenerateWorkOrderInputSerializer,
+    permission_classes=[GenerateWorkOrderPermission]
     )
     def generate_work_order(
     self,
@@ -129,6 +132,7 @@ class DefectReleaseRequestViewSet(ReadOnlyModelViewSet):
         methods=["post"],
         url_path="validate",
         serializer_class=DefectReleaseValidationInputSerializer,
+        permission_classes=[ValidateDefectReleaseRequestPermission]
     )
     def validate(self, request, pk=None):
         """

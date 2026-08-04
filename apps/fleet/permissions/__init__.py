@@ -26,6 +26,11 @@ VehiclePermission,
 VehicleAgePolicyConfigurationPermission,
 )
 
+from .defects import (
+SubmitDefectReleaseRequestPermission,
+GenerateWorkOrderPermission,
+ValidateDefectReleaseRequestPermission,
+)
 
 
 __all__ = [
@@ -48,6 +53,11 @@ __all__ = [
     "VehicleMembershipPermission",
     "VehicleMembershipRequestPermission",
 
+
+    # Defects
+    "SubmitDefectReleaseRequestPermission",
+    "GenerateWorkOrderPermission",
+    "ValidateDefectReleaseRequestPermission",
 
 
     # Vehicles
