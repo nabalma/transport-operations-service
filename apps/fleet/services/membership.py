@@ -440,3 +440,21 @@ def get_active_vehicle_membership(*, vehicle) -> VehicleMembership:
         )
 
     return membership
+
+
+
+def vehicle_has_active_membership(
+    *,
+    vehicle: Vehicle,
+) -> bool:
+    """
+    Retourne True si le véhicule possède une appartenance active
+    et non supprimée à la flotte.
+    """
+
+    return VehicleMembership.objects.filter(
+        vehicle=vehicle,
+        status=VehicleMembershipStatus.ACTIVE,
+        exit_date__isnull=True,
+        is_deleted=False,
+    ).exists()

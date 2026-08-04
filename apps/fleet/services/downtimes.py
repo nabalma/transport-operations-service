@@ -148,7 +148,7 @@ def _ensure_vehicle_has_no_active_downtime(
 # _get_active_downtime
 # Retourne l’immobilisation active d’un véhicule, si elle existe.
 # -------------------------------------------------------------------
-def _get_active_downtime(
+def get_active_downtime(
     *,
     vehicle: Vehicle,
 ) -> Downtime | None:
@@ -388,7 +388,7 @@ def _get_or_create_active_downtime(
     immobilisation est créée.
     """
 
-    downtime = _get_active_downtime(
+    downtime = get_active_downtime(
         vehicle=vehicle,
     )
 

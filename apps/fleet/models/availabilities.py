@@ -2,6 +2,7 @@
 import uuid
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 
 
 from apps.fleet.constants import (
@@ -26,16 +27,15 @@ class VehicleAvailabilityEvaluation(TimeStampedSoftDeletableModel):
     vehicle = models.ForeignKey(Vehicle, on_delete=models.PROTECT, related_name="availability_evaluations")
 
     # Date et heure de l’évaluation.
-    evaluated_at = models.DateTimeField()
+    evaluated_at = models.DateTimeField(
+    default=timezone.now,
+)
 
     # Résultat calculé automatiquement.
     calculated_result = models.CharField(max_length=20, choices=VehicleAvailabilityResult.choices)
 
     # Résultat final après validation/invalidation éventuelle.
     final_result = models.CharField(max_length=20, choices=VehicleAvailabilityResult.choices)
-
-    # Version des règles utilisées.
-    rule_version = models.CharField(max_length=50)
 
     # Utilisateur ayant validé ou invalidé le calcul.
     validated_by = models.ForeignKey(

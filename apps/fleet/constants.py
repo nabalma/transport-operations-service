@@ -356,6 +356,8 @@ class VehicleAvailabilityReasonType(models.TextChoices):
     ACTIVE_DOWNTIME = "ACTIVE_DOWNTIME", "Immobilisation active"
     OPEN_BLOCKING_DEFECT = "OPEN_BLOCKING_DEFECT", "Défaut bloquant ouvert"
     ACTIVE_TRIP = "ACTIVE_TRIP", "Voyage en cours"
+    NO_ACTIVE_MEMBERSHIP = ("NO_ACTIVE_MEMBERSHIP","Aucune appartenance active à la flotte",)
+
 
 
 # -------------------------------------------------------------------

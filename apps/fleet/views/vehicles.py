@@ -1,6 +1,8 @@
 from apps.fleet.filters import VehicleFilter
+from apps.fleet.serializers.availabilities import VehicleAvailabilityEvaluationInputSerializer, VehicleAvailabilityEvaluationSerializer
 from apps.fleet.serializers.operations import DowntimeSerializer
 from apps.fleet.serializers.vehicles import VehicleManualDowntimeInputSerializer
+from apps.fleet.services.availabilities import evaluate_vehicle_availability
 from apps.fleet.services.downtimes import create_manual_downtime
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
@@ -92,6 +94,38 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
             status=status.HTTP_201_CREATED,
         )
 
+
+
+   @action(
+    detail=True,
+    methods=["post"],
+    url_path="evaluate-availability",
+    serializer_class=VehicleAvailabilityEvaluationInputSerializer,
+
+    )
+   def evaluate_availability(
+    self,
+    request,
+    pk=None,
+    ):
+            """
+            Calcule et enregistre une nouvelle évaluation
+            de disponibilité pour ce véhicule.
+            """
+
+            evaluation = evaluate_vehicle_availability(
+                vehicle=self.get_object(),
+                user=request.user,
+            )
+
+            serializer = VehicleAvailabilityEvaluationSerializer(
+                evaluation,
+            )
+
+            return Response(
+                serializer.data,
+                status=status.HTTP_201_CREATED,
+            )
 
 class TankerCompartmentViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = TankerCompartment.objects.filter(is_deleted=False)

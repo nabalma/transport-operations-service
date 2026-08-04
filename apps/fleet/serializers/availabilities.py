@@ -1,3 +1,4 @@
+from apps.fleet.constants import VehicleAvailabilityResult
 from rest_framework import serializers
 
 from apps.fleet.models import (
@@ -142,3 +143,33 @@ class NextTripEligibilityEvaluationReasonSerializer(
             "deleted_at",
             "deleted_by",
         ]
+
+
+class VehicleAvailabilityEvaluationInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Aucun champ n’est requis pour lancer l’évaluation.
+    """
+
+    pass
+
+
+class VehicleAvailabilityValidationInputSerializer(
+    serializers.Serializer,
+):
+    """
+    Valide la décision humaine sur une évaluation
+    de disponibilité.
+    """
+
+    final_result = serializers.ChoiceField(
+        choices=VehicleAvailabilityResult.choices,
+    )
+
+    validation_comment = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        allow_null=True,
+        trim_whitespace=True,
+    )

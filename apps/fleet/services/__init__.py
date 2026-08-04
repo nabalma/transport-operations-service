@@ -52,6 +52,8 @@ from .membership import (
     cancel_vehicle_membership_request,
     approve_vehicle_membership_request,
     reject_vehicle_membership_request,
+    vehicle_has_active_membership,
+    
   
     
 )
@@ -67,6 +69,7 @@ from .downtimes import (
     create_manual_downtime,
     create_or_update_downtime_from_blocking_criterion_result,
     resolve_downtime_cause,
+    get_active_downtime,
 )
 
 from .return_to_services import (
@@ -75,6 +78,10 @@ from .return_to_services import (
     reject_return_to_service
 )
 
+from .availabilities import (
+    evaluate_vehicle_availability,
+    validate_vehicle_availability_evaluation,
+)
 
 
 __all__ = [
@@ -88,6 +95,7 @@ __all__ = [
     "create_manual_downtime",
     "create_or_update_downtime_from_blocking_criterion_result",
     "resolve_downtime_cause",
+    "get_active_downtime",
 
     # Return to service
     "create_return_to_service",
@@ -135,8 +143,15 @@ __all__ = [
     "create_vehicle_membership_request",
     "reject_vehicle_membership_request",
     "submit_vehicle_membership_request",
+    "vehicle_has_active_membership",
 
     # Vehicles
     "activate_vehicle",
     "ensure_vehicle_is_active",
+
+
+    # availabilities
+    "evaluate_vehicle_availability",
+    "validate_vehicle_availability_evaluation",
+
 ]
