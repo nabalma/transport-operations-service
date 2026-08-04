@@ -1,0 +1,46 @@
+from rest_framework.permissions import SAFE_METHODS
+from apps.fleet.constants import UserGroup
+from apps.fleet.permissions import BaseGroupPermission
+
+
+# -- InspectionPermission
+
+
+class InspectionPermission(BaseGroupPermission):
+
+    def _get_allowed_groups(self, request):
+        if request.method in SAFE_METHODS:
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,]
+
+        if request.method == "POST":
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,]
+
+        if request.method in ["PUT", "PATCH", "DELETE"]:
+            return [UserGroup.INSPECTOR,]
+
+        return []
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        allowed_groups = self._get_allowed_groups(request)
+        return self._has_any_group(request,allowed_groups,)
+
+
+# -- InspectionConfigurationPermission
+class InspectionConfigurationPermission(BaseGroupPermission):
+
+    def _get_allowed_groups(self, request):
+        if request.method in SAFE_METHODS:
+            return [UserGroup.INSPECTOR,UserGroup.SUPERVISOR,UserGroup.FLEET_MANAGER,UserGroup.MANAGER]
+
+        return [UserGroup.SUPERVISOR,]
+
+    def has_permission(self, request, view):
+        if not request.user.is_authenticated:
+            return False
+
+        allowed_groups = self._get_allowed_groups(request)
+        return self._has_any_group(request,allowed_groups,)
+    
