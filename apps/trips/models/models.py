@@ -9,6 +9,8 @@ from django.utils import timezone
 # Évaluation d’éligibilité pour le prochain voyage.
 # Toutes les évaluations sont conservées pour audit.
 # -------------------------------------------------------------------
+from apps.fleet.models.vehicles import Vehicle
+from apps.trips.constants import NextTripEligibilityReasonType, NextTripEligibilityResult
 from apps.trips.models.base import TimeStampedSoftDeletableModel
 
 

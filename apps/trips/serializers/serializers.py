@@ -1,3 +1,30 @@
+from rest_framework import serializers
+from apps.trips.models.models import NextTripEligibilityEvaluation, NextTripEligibilityEvaluationReason
+
+
+
+
+
+class NextTripEligibilityEvaluationReasonSummarySerializer(
+    serializers.ModelSerializer,
+):
+    """
+    Sérialise une raison résumée d’inéligibilité
+    au prochain voyage.
+    """
+
+    class Meta:
+        model = NextTripEligibilityEvaluationReason
+
+        fields = (
+            "reason_type",
+            "message",
+            "source_id",
+        )
+
+        read_only_fields = fields
+
+
 
 class NextTripEligibilityEvaluationSerializer(
     serializers.ModelSerializer
