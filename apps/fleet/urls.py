@@ -1,4 +1,4 @@
-from apps.fleet.views import MaintenanceScheduleViewSet, MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,NextTripEligibilityEvaluationReasonViewSet, NextTripEligibilityEvaluationViewSet, ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
+from apps.fleet.views import MaintenanceScheduleViewSet, MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
 from apps.fleet.views.operations import DowntimeCauseViewSet
 from rest_framework.routers import DefaultRouter
 
@@ -30,8 +30,6 @@ router.register("downtime-causes",DowntimeCauseViewSet,basename="downtime-cause"
 router.register("return-to-services",ReturnToServiceViewSet,basename="return-to-service",)
 router.register("vehicle-availability-evaluations",VehicleAvailabilityEvaluationViewSet,basename="vehicle-availability-evaluation",)
 router.register("vehicle-availability-evaluation-reasons",VehicleAvailabilityEvaluationReasonViewSet,basename="vehicle-availability-evaluation-reason",)
-router.register("next-trip-eligibility-evaluations",NextTripEligibilityEvaluationViewSet,basename="next-trip-eligibility-evaluation",)
-router.register("next-trip-eligibility-evaluation-reasons",NextTripEligibilityEvaluationReasonViewSet,basename="next-trip-eligibility-evaluation-reason",)
 router.register("evidences",EvidenceViewSet,basename="evidence",)
 
 urlpatterns = router.urls

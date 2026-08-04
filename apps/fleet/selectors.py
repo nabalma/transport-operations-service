@@ -1,5 +1,5 @@
 from apps.fleet.constants import VehicleMembershipStatus
-from apps.fleet.models import Defect, Inspection, InspectionCriterion, NextTripEligibilityEvaluation, Vehicle, VehicleAvailabilityEvaluation, VehicleMembershipRequest
+from apps.fleet.models import Defect, Inspection, InspectionCriterion,Vehicle, VehicleAvailabilityEvaluation, VehicleMembershipRequest
 from rest_framework.exceptions import ValidationError
 from django.db.models import QuerySet
 
@@ -134,25 +134,6 @@ def list_defects_with_source_and_resolution() -> QuerySet[Defect]:
         )
       
     )
-
-
-
-# ==================================
-#  NextTripEligibilityEvaluation
-# ==================================
-
-
-
-
-def list_next_trip_eligibility_evaluations(
-) -> QuerySet[NextTripEligibilityEvaluation]:
-    return (
-        NextTripEligibilityEvaluation.objects
-        .filter(is_deleted=False)
-        .select_related("vehicle")
-        .prefetch_related("evaluation_reasons")
-    )
-
 
 
 # ==================================

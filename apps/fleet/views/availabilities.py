@@ -3,11 +3,11 @@ from apps.fleet.serializers.availabilities import VehicleAvailabilityValidationI
 from apps.fleet.services.availabilities import validate_vehicle_availability_evaluation
 
 from .mixins import AuditUserMixin, SoftDeleteMixin
-from apps.fleet.selectors import list_next_trip_eligibility_evaluations, list_vehicle_availability_evaluations
+from apps.fleet.selectors import list_vehicle_availability_evaluations
 from rest_framework.viewsets import ModelViewSet
 
-from apps.fleet.models import NextTripEligibilityEvaluationReason,VehicleAvailabilityEvaluationReason
-from apps.fleet.serializers import NextTripEligibilityEvaluationReasonSerializer, NextTripEligibilityEvaluationSerializer, VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer 
+from apps.fleet.models import VehicleAvailabilityEvaluationReason
+from apps.fleet.serializers import VehicleAvailabilityEvaluationReasonSerializer, VehicleAvailabilityEvaluationSerializer 
 
 from rest_framework.decorators import action
 from rest_framework import status
@@ -80,16 +80,9 @@ class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
 
 
 
-class NextTripEligibilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = list_next_trip_eligibility_evaluations()
-    serializer_class = NextTripEligibilityEvaluationSerializer
+
   
 
 
-class NextTripEligibilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    queryset = (NextTripEligibilityEvaluationReason.objects
-        .select_related("evaluation")
-        .filter(is_deleted=False)
-    )
-    serializer_class = NextTripEligibilityEvaluationReasonSerializer
+
   

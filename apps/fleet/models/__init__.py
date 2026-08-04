@@ -43,8 +43,6 @@ from .operations import (
 )
 
 from .availabilities import (
-    NextTripEligibilityEvaluation,
-    NextTripEligibilityEvaluationReason,
     VehicleAvailabilityEvaluation,
     VehicleAvailabilityEvaluationReason,
 )
@@ -79,8 +77,6 @@ __all__ = [
      "Downtime",
     "ReturnToService",
     "DowntimeCause",
-     "NextTripEligibilityEvaluation",
-    "NextTripEligibilityEvaluationReason",
     "VehicleAvailabilityEvaluation",
     "VehicleAvailabilityEvaluationReason",
     "Evidence",

@@ -1,6 +1,4 @@
 from .availabilities import (
-    NextTripEligibilityEvaluationReasonViewSet,
-    NextTripEligibilityEvaluationViewSet,
     VehicleAvailabilityEvaluationReasonViewSet,
     VehicleAvailabilityEvaluationViewSet,
 )
@@ -61,8 +59,6 @@ __all__ = [
     "InspectionSectionViewSet",
     "InspectionVersionViewSet",
     "InspectionViewSet",
-    "NextTripEligibilityEvaluationReasonViewSet",
-    "NextTripEligibilityEvaluationViewSet",
     "ReturnToServiceViewSet",
     "TankerCompartmentViewSet",
     "VehicleAgePolicyConfigurationViewSet",

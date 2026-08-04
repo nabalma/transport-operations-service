@@ -1,10 +1,6 @@
 
 
 from .availabilities import (
-    NextTripEligibilityEvaluationReasonSerializer,
-    NextTripEligibilityEvaluationReasonSummarySerializer,
-    NextTripEligibilityEvaluationSerializer,
-    NextTripEligibilityEvaluationSummarySerializer,
     VehicleAvailabilityEvaluationReasonSerializer,
     VehicleAvailabilityEvaluationReasonSummarySerializer,
     VehicleAvailabilityEvaluationSerializer,
@@ -120,10 +116,6 @@ __all__ = [
     "InspectionVersionSerializer",
     "MaintenanceSerializer",
     "MaintenanceSummarySerializer",
-    "NextTripEligibilityEvaluationReasonSerializer",
-    "NextTripEligibilityEvaluationReasonSummarySerializer",
-    "NextTripEligibilityEvaluationSerializer",
-    "NextTripEligibilityEvaluationSummarySerializer",
     "RecordCriterionResultInputSerializer",
     "ReturnToServiceSerializer",
     "ReturnToServiceSummarySerializer",
