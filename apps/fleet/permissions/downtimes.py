@@ -3,8 +3,7 @@ from rest_framework.permissions import SAFE_METHODS
 from apps.fleet.constants import UserGroup
 
 
-# -- MaintenancePolicyPermission
-class MaintenancePolicyPermission(BaseGroupPermission):
+class DowntimePermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request):
         if request.method in SAFE_METHODS:
@@ -16,8 +15,8 @@ class MaintenancePolicyPermission(BaseGroupPermission):
             ]
 
         return [
-            UserGroup.SUPERVISOR,
-            UserGroup.MANAGER,
+            UserGroup.FLEET_MANAGER,
+             UserGroup.INSPECTOR,
         ]
 
     def has_permission(self, request, view):
@@ -32,7 +31,7 @@ class MaintenancePolicyPermission(BaseGroupPermission):
         )
 
 
-class MaintenanceWorkOrderPermission(BaseGroupPermission):
+class ReturnToServicePermission(BaseGroupPermission):
 
     def _get_allowed_groups(self, request):
         if request.method in SAFE_METHODS:
@@ -44,7 +43,7 @@ class MaintenanceWorkOrderPermission(BaseGroupPermission):
             ]
 
         return [
-            UserGroup.FLEET_MANAGER,
+            UserGroup.SUPERVISOR,
         ]
 
     def has_permission(self, request, view):

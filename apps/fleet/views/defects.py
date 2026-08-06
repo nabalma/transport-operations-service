@@ -1,6 +1,6 @@
 
 
-from apps.fleet.permissions import ValidateDefectReleaseRequestPermission, SubmitDefectReleaseRequestPermission,GenerateWorkOrderPermission
+from apps.fleet.permissions import DefectReleaseRequestPermission, ValidateDefectReleaseRequestPermission, SubmitDefectReleaseRequestPermission,GenerateWorkOrderPermission
 from apps.fleet.serializers.maintenances import DefectGenerateWorkOrderInputSerializer, MaintenanceWorkOrderSerializer
 from apps.fleet.services.maintenance_work_orders import generate_corrective_work_order
 from rest_framework import status
@@ -124,6 +124,7 @@ class DefectReleaseRequestViewSet(ReadOnlyModelViewSet):
         )
         .order_by("-submitted_at")
     )
+    permission_classes = [DefectReleaseRequestPermission]
 
         # validate
     # Enregistre la décision finale sur une demande de levée.
@@ -168,4 +169,5 @@ class DefectReleaseValidationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet
         .select_related("defect")
         .filter(is_deleted=False))
     serializer_class = DefectReleaseValidationSerializer
+    
   

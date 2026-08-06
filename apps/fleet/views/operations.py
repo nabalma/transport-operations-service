@@ -1,6 +1,7 @@
 
 from apps.fleet.models import Downtime,ReturnToService,DowntimeCause
 
+from apps.fleet.permissions import DowntimePermission,ReturnToServicePermission
 from apps.fleet.serializers import DowntimeSerializer, ReturnToServiceSerializer,DowntimeCauseSerializer, DowntimeCreateInputSerializer, ReturnToServiceCreateInputSerializer
 
 from apps.fleet.serializers.operations import ReturnToServiceApproveInputSerializer, ReturnToServiceRejectInputSerializer
@@ -20,6 +21,7 @@ class DowntimeViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
     """
 
     serializer_class = DowntimeSerializer
+    permission_classes = [DowntimePermission]
 
     queryset = (
         Downtime.objects
@@ -132,6 +134,7 @@ class DowntimeCauseViewSet(ModelViewSet):
     """
 
     serializer_class = DowntimeCauseSerializer
+    permission_classes = [DowntimePermission]
 
     queryset = (
         DowntimeCause.objects
@@ -183,6 +186,7 @@ class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
         .filter(is_deleted=False)
     )
     serializer_class = ReturnToServiceSerializer
+    permission_classes = [ReturnToServicePermission]
 
 
     @action(

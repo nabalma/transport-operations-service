@@ -4,8 +4,8 @@
 from apps.fleet.models import MaintenanceSchedule,MaintenanceWorkOrder,MaintenancePolicy,MaintenanceComponent,MaintenanceWorkOrderItem
 
 
+from apps.fleet.permissions import MaintenancePolicyPermission, GenerateWorkOrderPermission,MaintenanceWorkOrderPermission
 from rest_framework.viewsets import ModelViewSet
-from apps.fleet.permissions import MaintenancePolicyPermission
 from apps.fleet.serializers import MaintenanceWorkOrderItemCreateInputSerializer, MaintenanceScheduleGenerateWorkOrderInputSerializer,MaintenanceScheduleCancelInputSerializer,MaintenanceScheduleSerializer,MaintenanceWorkOrderCancelInputSerializer,MaintenanceWorkOrderCompleteInputSerializer,MaintenanceWorkOrderSerializer,MaintenanceWorkOrderItemSerializer,MaintenancePolicySerializer, MaintenanceComponentSerializer
 from apps.fleet.services import generate_preventive_work_order,delete_maintenance_schedule,fulfill_maintenance_schedule,update_maintenance_schedule, cancel_maintenance_schedule,create_maintenance_schedule,delete_maintenance_work_order,cancel_maintenance_work_order,complete_maintenance_work_order,update_maintenance_work_order,create_maintenance_work_order,delete_maintenance_work_order_item,update_maintenance_work_order_item,create_maintenance_policy,create_maintenance_component,create_maintenance_work_order_item
 
@@ -75,6 +75,7 @@ class MaintenanceWorkOrderItemViewSet(
     )
 
     serializer_class = MaintenanceWorkOrderItemSerializer
+    permission_classes = [MaintenanceWorkOrderPermission]
 
     queryset = (
     MaintenanceWorkOrderItem.objects
@@ -160,6 +161,7 @@ class MaintenanceWorkOrderViewSet(ModelViewSet):
     """
 
     serializer_class = MaintenanceWorkOrderSerializer
+    permission_classes = [MaintenanceWorkOrderPermission]
 
     http_method_names = (
     "get",
@@ -413,6 +415,7 @@ class MaintenanceScheduleViewSet(ModelViewSet):
     """
 
     serializer_class = MaintenanceScheduleSerializer
+    permission_classes = [MaintenanceWorkOrderPermission]
 
     http_method_names = (
     "get",
@@ -580,6 +583,7 @@ class MaintenanceScheduleViewSet(ModelViewSet):
     methods=["post"],
     url_path="generate-work-order",
     serializer_class=MaintenanceScheduleGenerateWorkOrderInputSerializer,
+    permission_classes=[GenerateWorkOrderPermission]
 )
     def generate_work_order(
     self,
