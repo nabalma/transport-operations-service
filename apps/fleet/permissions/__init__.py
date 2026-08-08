@@ -27,7 +27,7 @@ VehiclePermission,
 VehicleAgePolicyConfigurationPermission,
 )
 
-from .downtimes import (
+from .operations import (
 DowntimePermission,
 ReturnToServicePermission,
 )
@@ -37,6 +37,11 @@ SubmitDefectReleaseRequestPermission,
 GenerateWorkOrderPermission,
 ValidateDefectReleaseRequestPermission,
 DefectReleaseRequestPermission,
+)
+
+from .availabilities import (
+VehicleAvailabilityEvaluationPermission,
+VehicleAvailabilityEvaluationReasonPermission,
 )
 
 
@@ -57,7 +62,7 @@ __all__ = [
     "MaintenanceWorkOrderPermission",
 
 
-    # Downtimes
+    # Operations
     "DowntimePermission",
     "ReturnToServicePermission",
 
@@ -65,6 +70,11 @@ __all__ = [
     # Memberships
     "VehicleMembershipPermission",
     "VehicleMembershipRequestPermission",
+
+
+    # VehicleAvailabilityEvaluations
+    "VehicleAvailabilityEvaluationPermission",
+    "VehicleAvailabilityEvaluationReasonPermission",
 
 
     # Defects

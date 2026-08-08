@@ -1,4 +1,5 @@
 
+from apps.fleet.permissions import VehicleAvailabilityEvaluationReasonPermission, VehicleAvailabilityEvaluationPermission 
 from apps.fleet.serializers.availabilities import VehicleAvailabilityValidationInputSerializer
 from apps.fleet.services.availabilities import validate_vehicle_availability_evaluation
 
@@ -16,6 +17,7 @@ from rest_framework.response import Response
 class VehicleAvailabilityEvaluationViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
     queryset = list_vehicle_availability_evaluations()
     serializer_class = VehicleAvailabilityEvaluationSerializer
+    permission_classes = [VehicleAvailabilityEvaluationPermission]
 
     @action(
     detail=True,
@@ -69,6 +71,7 @@ class VehicleAvailabilityEvaluationReasonViewSet(AuditUserMixin,SoftDeleteMixin,
         .filter(is_deleted=False)
     )
     serializer_class = VehicleAvailabilityEvaluationReasonSerializer
+    permission_classes = [VehicleAvailabilityEvaluationReasonPermission]
   
 
 
