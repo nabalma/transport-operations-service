@@ -1,34 +1,69 @@
-# Variables d'environnement locales et secrets
-.env
-.env.*
+# ============================================================
+# BACKEND - Django / Python
+# ============================================================
 
-# Exemple de configuration versionné
-!.env.example
+# Variables d'environnement locales et secrets
+backend/.env
+backend/.env.*
+
+# Exemple de configuration à versionner
+!backend/.env.example
 
 # Environnement virtuel Python
-.venv/
-venv/
+backend/.venv/
+backend/venv/
 
-# Fichiers temporaires générés par Python
-__pycache__/
+# Fichiers Python générés
+**/__pycache__/
 *.py[cod]
 *$py.class
 
 # Django
-db.sqlite3
-staticfiles/
-media/
+backend/db.sqlite3
+backend/staticfiles/
+backend/media/
 
 # Tests / coverage
-.pytest_cache/
-.coverage
-htmlcov/
+backend/.pytest_cache/
+backend/.coverage
+backend/htmlcov/
 
+
+# ============================================================
+# FRONTEND - JavaScript / TypeScript
+# ============================================================
+
+# Dépendances Node
+frontend/node_modules/
+
+# Builds
+frontend/dist/
+frontend/build/
+
+# Variables d'environnement frontend
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+
+# Tests / coverage frontend
+frontend/coverage/
+
+# Cache des outils frontend
+frontend/.cache/
+
+
+# ============================================================
 # IDE / OS
+# ============================================================
+
 .vscode/
 .idea/
 .DS_Store
 Thumbs.db
 
-# Fichiers personnels à ne jamais versionner
+
+# ============================================================
+# FICHIERS PERSONNELS
+# ============================================================
+
 no-commit/
