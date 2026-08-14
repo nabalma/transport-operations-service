@@ -1,7 +1,7 @@
 
 from apps.fleet.permissions import BaseGroupPermission
 from rest_framework.permissions import SAFE_METHODS
-from apps.fleet.constants import UserGroup
+from apps.fleet.constants import DefectCreationSource, UserGroup
 
 
 # -- SubmitDefectReleaseRequestPermission
@@ -71,10 +71,13 @@ class ValidateDefectReleaseRequestPermission(BaseGroupPermission):
                 UserGroup.INSPECTOR,
                 UserGroup.FLEET_MANAGER,
             ]
-
+     
         return [
-            UserGroup.INSPECTOR,
+                UserGroup.INSPECTOR,
+                UserGroup.SUPERVISOR,
         ]
+
+        return []
 
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
@@ -86,6 +89,36 @@ class ValidateDefectReleaseRequestPermission(BaseGroupPermission):
             request,
             allowed_groups,
         )
+
+    def has_object_permission(
+        self,
+        request,
+        view,
+        release_request,
+    ):
+        defect = release_request.defect
+
+        # Le défaut vient d’une inspection :
+        # seul un inspecteur peut valider.
+        if defect.source_inspection_id is not None:
+            return self._has_any_group(
+                request,
+                [
+                    UserGroup.INSPECTOR,
+                ],
+            )
+
+        # Le défaut a été créé manuellement par le Fleet Manager :
+        # seul un superviseur peut valider.
+        if defect.creation_source == DefectCreationSource.USER:
+            return self._has_any_group(
+                request,
+                [
+                    UserGroup.SUPERVISOR,
+                ],
+            )
+
+        return False
 
 
 class DefectReleaseRequestPermission(BaseGroupPermission):
