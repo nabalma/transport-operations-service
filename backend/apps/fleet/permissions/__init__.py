@@ -37,6 +37,7 @@ SubmitDefectReleaseRequestPermission,
 GenerateWorkOrderPermission,
 ValidateDefectReleaseRequestPermission,
 DefectReleaseRequestPermission,
+DefectPermission,
 )
 
 from .availabilities import (
@@ -82,6 +83,7 @@ __all__ = [
     "GenerateWorkOrderPermission",
     "ValidateDefectReleaseRequestPermission",
     "DefectReleaseRequestPermission",
+    "DefectPermission",
 
 
     # Vehicles

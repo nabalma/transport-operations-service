@@ -1,4 +1,4 @@
-from apps.fleet.views import MaintenanceScheduleViewSet, MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectReleaseValidationViewSet, DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
+from apps.fleet.views import MaintenanceScheduleViewSet, MaintenanceWorkOrderViewSet, MaintenanceWorkOrderItemViewSet,MaintenanceComponentViewSet,MaintenancePolicyViewSet,CarrierViewSet,DefectViewSet, DowntimeViewSet, EvidenceViewSet, InspectionChapterViewSet, InspectionScoringPolicyConfigurationViewSet, InspectionVersionViewSet, InspectionCriterionResultViewSet, InspectionCriterionViewSet, InspectionSectionViewSet, InspectionViewSet,ReturnToServiceViewSet, TankerCompartmentViewSet, VehicleAgePolicyConfigurationViewSet, VehicleAvailabilityEvaluationReasonViewSet, VehicleAvailabilityEvaluationViewSet, VehicleDocumentViewSet, VehicleMembershipRequestViewSet, VehicleMembershipViewSet, VehicleViewSet,DefectReleaseRequestViewSet
 from apps.fleet.views.operations import DowntimeCauseViewSet
 from rest_framework.routers import DefaultRouter
 
@@ -19,7 +19,6 @@ router.register("inspections",InspectionViewSet,basename="inspection",)
 router.register("inspection-criterion-results",InspectionCriterionResultViewSet,basename="inspection-criterion-result",)
 router.register("defects",DefectViewSet,basename="defect",)
 router.register("defect-release-requests",DefectReleaseRequestViewSet,basename="defect-release-request",)
-router.register("defect-release-validations",DefectReleaseValidationViewSet,basename="defect-release-validation",)
 router.register("maintenance-policies",MaintenancePolicyViewSet,basename="maintenance-policy",)
 router.register("maintenance-components",MaintenanceComponentViewSet,basename="maintenance-component",)
 router.register("maintenance-work-order-items",MaintenanceWorkOrderItemViewSet,basename="maintenance-work-order-item",)
