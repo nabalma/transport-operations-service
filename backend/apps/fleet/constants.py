@@ -365,16 +365,19 @@ class VehicleAvailabilityReasonType(models.TextChoices):
 # Utilisé avec owner_id dans le modèle Evidence.
 # -------------------------------------------------------------------
 class EvidenceOwnerType(models.TextChoices):
-    DOCUMENT = "DOCUMENT", "Document"
+    VEHICLE_DOCUMENT = "VEHICLE_DOCUMENT", "Vehicle document"
+    VEHICLE_MEMBERSHIP_REQUEST = "VEHICLE_MEMBERSHIP_REQUEST", "Vehicle membership request"
     INSPECTION = "INSPECTION", "Inspection"
     INSPECTION_CRITERION_RESULT = "INSPECTION_CRITERION_RESULT", "Inspection criterion result"
     DEFECT = "DEFECT", "Defect"
-    CORRECTIVE_ACTION = "CORRECTIVE_ACTION", "Corrective action"
-    MAINTENANCE = "MAINTENANCE", "Maintenance"
+    DEFECT_RELEASE_REQUEST = "DEFECT_RELEASE_REQUEST", "Defect release request"
+    DEFECT_RELEASE_VALIDATION = "DEFECT_RELEASE_VALIDATION", "Defect release validation"
+    MAINTENANCE_WORK_ORDER = "MAINTENANCE_WORK_ORDER", "Maintenance work order"
+    MAINTENANCE_WORK_ORDER_ITEM = "MAINTENANCE_WORK_ORDER_ITEM", "Maintenance work order item"
+    DOWNTIME = "DOWNTIME", "Downtime"
+    DOWNTIME_CAUSE = "DOWNTIME_CAUSE", "Downtime cause"
     RETURN_TO_SERVICE = "RETURN_TO_SERVICE", "Return to service"
     AVAILABILITY_EVALUATION = "AVAILABILITY_EVALUATION", "Availability evaluation"
-    NEXT_TRIP_ELIGIBILITY_EVALUATION = "NEXT_TRIP_ELIGIBILITY_EVALUATION", "Next trip eligibility evaluation"
-
 
 # -------------------------------------------------------------------
 # EvidenceType

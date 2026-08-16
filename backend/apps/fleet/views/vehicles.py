@@ -4,6 +4,7 @@ from apps.fleet.serializers.operations import DowntimeSerializer
 from apps.fleet.serializers.vehicles import VehicleManualDowntimeInputSerializer
 from apps.fleet.services.availabilities import evaluate_vehicle_availability
 from apps.fleet.services.downtimes import create_manual_downtime
+from apps.fleet.services.vehicles import create_vehicle
 from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
 from apps.fleet.selectors import list_active_fleet_vehicles, list_vehicle_membership_requests, list_vehicles
@@ -38,6 +39,20 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
    filterset_class = VehicleFilter
 
 
+   def perform_create(self, serializer):
+    vehicle = create_vehicle(
+        carrier=serializer.validated_data["carrier"],
+        tractor_registration=serializer.validated_data["tractor_registration"],
+        tractor_manufacture_year=serializer.validated_data["tractor_manufacture_year"],
+        tanker_registration=serializer.validated_data["tanker_registration"],
+        tanker_manufacture_year=serializer.validated_data["tanker_manufacture_year"],
+        vehicle_coupling_start_date=serializer.validated_data["vehicle_coupling_start_date"],
+        vehicle_coupling_end_date=serializer.validated_data.get("vehicle_coupling_end_date"),
+        user=self.request.user,
+    )
+    serializer.instance = vehicle
+
+
    @action(detail=False, methods=["get"], url_path="in-fleet")
    def in_fleet(self, request):
         queryset = list_active_fleet_vehicles()
@@ -57,7 +72,7 @@ class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
     methods=["post"],
     url_path="downtimes/manual",
     serializer_class=VehicleManualDowntimeInputSerializer,
-)
+    )
    def create_manual_downtime(
         self,
         request,

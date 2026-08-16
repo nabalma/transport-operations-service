@@ -77,8 +77,6 @@ class ValidateDefectReleaseRequestPermission(BaseGroupPermission):
                 UserGroup.SUPERVISOR,
         ]
 
-        return []
-
     def has_permission(self, request, view):
         if not request.user.is_authenticated:
             return False

@@ -1,7 +1,52 @@
 from apps.fleet.constants import CarrierStatus, VehicleStatus
 from apps.fleet.models import Vehicle, VehicleAgePolicyConfiguration
+from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework.exceptions import ValidationError
 from django.utils import timezone
+
+
+
+# -------------------------------------------------------------------
+# Crée un véhicule avec le statut initial AWAITING_FLEET_ENTRY.
+# Valide ses données et renseigne automatiquement les champs d’audit.
+# -------------------------------------------------------------------
+def create_vehicle(
+    *,
+    carrier,
+    tractor_registration: str,
+    tractor_manufacture_year: int,
+    tanker_registration: str,
+    tanker_manufacture_year: int,
+    vehicle_coupling_start_date,
+    user,
+    vehicle_coupling_end_date=None,
+) -> Vehicle:
+    """
+    Crée un véhicule en attente d'entrée dans la flotte.
+    """
+
+    vehicle = Vehicle(
+        carrier=carrier,
+        tractor_registration=tractor_registration.strip(),
+        tractor_manufacture_year=tractor_manufacture_year,
+        tanker_registration=tanker_registration.strip(),
+        tanker_manufacture_year=tanker_manufacture_year,
+        vehicle_coupling_start_date=vehicle_coupling_start_date,
+        vehicle_coupling_end_date=vehicle_coupling_end_date,
+        status=VehicleStatus.AWAITING_FLEET_ENTRY,
+        created_by=user,
+        updated_by=user,
+    )
+
+    try:
+        vehicle.full_clean()
+    except DjangoValidationError as exc:
+        raise ValidationError(exc.message_dict) from exc
+
+    vehicle.save()
+
+    return vehicle
+
 
 
 # -------------------------------------------------------------------

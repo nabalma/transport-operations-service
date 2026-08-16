@@ -69,9 +69,15 @@ class VehicleSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "display_registration",
+            "status",
             "created_at",
+            "created_by",
             "updated_at",
+            "updated_by",
+            "is_deleted",
             "deleted_at",
+            "deleted_by",
+            "deleted_reason",
         ]
 
 
