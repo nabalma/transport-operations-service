@@ -9,9 +9,9 @@ from .mixins import AuditUserMixin, SoftDeleteMixin
 from apps.fleet.permissions import VehicleAgePolicyConfigurationPermission, VehicleMembershipPermission, VehicleMembershipRequestPermission, VehiclePermission
 from apps.fleet.selectors import list_active_fleet_vehicles, list_vehicle_membership_requests, list_vehicles
 from apps.fleet.services.membership import approve_vehicle_membership_request, cancel_vehicle_membership_request, create_vehicle_membership_request, reject_vehicle_membership_request, submit_vehicle_membership_request
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet,GenericViewSet
 from rest_framework.decorators import action
-from rest_framework import status
+from rest_framework import status,mixins
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -30,7 +30,14 @@ class VehicleAgePolicyConfigurationViewSet(AuditUserMixin,ModelViewSet,):
     
        
 
-class VehicleViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet):
+class VehicleViewSet(
+    AuditUserMixin,
+    SoftDeleteMixin, 
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    GenericViewSet
+):
    queryset = list_vehicles()
    serializer_class = VehicleSerializer
    permission_classes=[VehiclePermission]
