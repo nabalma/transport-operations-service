@@ -87,7 +87,7 @@ class InspectionCriterionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 #
 # Charge la version utilisée et les résultats avec leurs critères.
 # =============================================================================
-class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
+class InspectionViewSet(ReadOnlyModelViewSet,):
     queryset = list_inspections_with_results()
 
     serializer_class = InspectionSerializer
@@ -183,14 +183,12 @@ class InspectionViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
 
 # InspectionCriterionResultViewSet
 # Charge directement le critère, sa section et sa version.
-class InspectionCriterionResultViewSet(AuditUserMixin,SoftDeleteMixin,ModelViewSet,):
-    # Apres la mise en place des regles metiers, nous passerons en readOnlyModelViewSet.
-    http_method_names = ["get", "head", "options", "put", "patch", ]
+class InspectionCriterionResultViewSet(ReadOnlyModelViewSet,):
+
     queryset = InspectionCriterionResult.objects.select_related(
             "inspection",
             "inspection__inspection_version",
             "criterion",
-            "criterion__section",
             "criterion__section",
         ).filter(is_deleted=False)
     serializer_class = InspectionCriterionResultSerializer
