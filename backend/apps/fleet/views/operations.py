@@ -7,7 +7,7 @@ from apps.fleet.serializers import DowntimeSerializer, ReturnToServiceSerializer
 from apps.fleet.serializers.operations import ReturnToServiceApproveInputSerializer, ReturnToServiceRejectInputSerializer
 from apps.fleet.services import resolve_downtime_cause,create_manual_downtime,create_return_to_service, approve_return_to_service,reject_return_to_service 
 from .mixins import AuditUserMixin, SoftDeleteMixin
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ModelViewSet, ReadOnlyModelViewSet
 
 from django.db.models import Prefetch
 from rest_framework.decorators import action
@@ -180,7 +180,7 @@ class DowntimeCauseViewSet(ModelViewSet):
 
    
 
-class ReturnToServiceViewSet(AuditUserMixin,SoftDeleteMixin, ModelViewSet,):
+class ReturnToServiceViewSet(ReadOnlyModelViewSet):
     queryset = (ReturnToService.objects
         .select_related("vehicle")
         .filter(is_deleted=False)
